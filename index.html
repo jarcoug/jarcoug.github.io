@@ -2,12 +2,73 @@
 <html>
 <head>
     <meta http-equiv ="Content-Type" content ="text/html; charset=utf-8">
-    <title>行政区划边界</title>
+    <title>行政区划边界查询/绘制/编辑/删除/清除/复制/导出,地址和经纬度在线查询,AMAP在线实例</title>
+	<meta name="author" content="cAn,gjcan_999@163.com"/>
+    <meta name="copyright" content="powered by cAn"/>
+    <meta name="keywords"
+          content="行政区边界,行政区查询,行政区边界查询,多边形绘制,多边形编辑,坐标复制,电子围栏导出,经纬度,查询,经纬度查询,经纬度在线查询,经纬度查找地名,经纬度查询,经纬度转换地名,地名查询经纬度,查询地名返回经纬度,根据经纬度查询地名,amap经纬度,gpsera.com">
+    <meta name="description"
+          content="运用amap api开发的地图系统,实现行政区边界查询/绘制/编辑/删除/清除/复制/导出,经纬度在线查询,地名查询经纬度,经纬度查询地名,经纬度查找地名,查询地名返回经纬度,根据经纬度查询地名,amap实例">
 	<script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.4.1/jquery.slim.min.js"></script>
-    <script language ="javascript"
-            src ="https://webapi.amap.com/maps?v=1.3&key=7de8697669288fc848e12a08f58d995e"></script>
-    <script language ="javascript">
+    <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+    <script language ="javascript" src ="https://webapi.amap.com/maps?v=1.4.15&key=7de8697669288fc848e12a08f58d995e&plugin=AMap.PolyEditor,AMap.MouseTool,AMap.Geocoder"></script>
+	<script language ="javascript">
         var mapObj,district;
+
+		 function showInfoP(e){
+			var text = '您在 [ '+e.lnglat.getLng()+','+e.lnglat.getLat()+' ] 的位置点击了多边形！';			
+			//document.querySelector("#text").innerText = text;
+			var t = e.target;
+			t.off('click', showInfoP);		
+			if(t instanceof AMap.Polygon){
+				var polyEditor = new AMap.PolyEditor(mapObj,t);				
+				polyEditor.open();			
+				polyEditor.on('addnode', function(event) {
+					console.info('触发事件：addnode');
+				})
+
+				polyEditor.on('adjust', function(event) {
+					console.info('触发事件：adjust');
+				})
+
+				polyEditor.on('removenode', function(event) {
+					console.info('触发事件：removenode');
+				})
+
+				polyEditor.on('end', function(event) {
+					console.info('触发事件： end');
+					// event.target 即为编辑后的多边形对象
+				})
+				polyEditorArr.push(polyEditor);
+			}
+							
+		}
+
+		function endRemove(){
+			var polygonsArr = mapObj.getAllOverlays('polygon');
+			for(var j=0;j<polygonsArr.length;j++){		
+				 polygonsArr[j].off('click', removeP);
+			}
+		}
+
+		function removeP(e){
+			var text = '您在 [ '+e.lnglat.getLng()+','+e.lnglat.getLat()+' ] 的位置点击了多边形！';			
+			//document.querySelector("#text").innerText = text;
+			var t = e.target;
+			t.off('click', removeP);
+			if(t instanceof AMap.Polygon){
+				mapObj.remove(t);
+			}								
+		}
+		
+		function removeStart(){
+			endAll();
+			var polygonsArr = mapObj.getAllOverlays('polygon');
+			for(var j=0;j<polygonsArr.length;j++){		
+				 polygonsArr[j].on('click', removeP);
+			}
+		}
+		var mouseTool;
         /*
         *初始化地图对象，加载地图
         */
@@ -17,8 +78,109 @@
                     center:new AMap.LngLat(116.397428,39.90923),//地图中心点
                     zoom:10 //地图显示的缩放级别
                 }) });
+				
+				mapObj.plugin(["AMap.ToolBar"], function() {
+					mapObj.addControl(new AMap.ToolBar());
+				});
+			mouseTool = new AMap.MouseTool(mapObj);
+			mouseTool.on('draw', function(event) {
+			  // event.obj 为绘制出来的覆盖物对象
+			  console.info('覆盖物对象绘制完成');
+			})
+
+			mapObj.on('click', function(e) {
+		        document.getElementById("lonlat").value = e.lnglat.getLng()+","+e.lnglat.getLat();	
+				regeoCode(true);
+		    });			
+
             initPolygon();
         }
+		var geocoder = new AMap.Geocoder({
+				city: "010", //城市设为北京，默认：“全国”
+				radius: 1000 //范围，默认：500
+			});
+		var marker = new AMap.Marker();;
+		function regeoCode(isMouse) {
+			
+			var lnglat  = document.getElementById('lonlat').value.split(',');
+			mapObj.add(marker);
+			marker.setPosition(lnglat);
+			if(!isMouse){
+				mapObj.setFitView(marker);
+			}
+			geocoder.getAddress(lnglat, function(status, result) {
+				if (status === 'complete'&&result.regeocode) {
+					var address = result.regeocode.formattedAddress;
+					var adcode =  result.regeocode.addressComponent.adcode+"("+address+")";
+					document.getElementById('address').value = address;
+					document.getElementById('adcode').value = adcode;
+				}else{
+					document.getElementById('address').value = "根据经纬度查询地址失败";
+					console.error('根据经纬度查询地址失败');					
+				}
+			});
+		}
+
+		function geoCode() {
+			var address  = document.getElementById('address').value;
+			geocoder.getLocation(address, function(status, result) {
+				if (status === 'complete'&&result.geocodes.length) {
+					var lnglat = result.geocodes[0].location
+					document.getElementById('lonlat').value = lnglat;
+					var adcode =  result.geocodes[0].adcode+"("+result.geocodes[0].formattedAddress+")";			
+					document.getElementById('adcode').value = adcode;
+					marker.setPosition(lnglat);
+					mapObj.add(marker);
+					mapObj.setFitView(marker);
+				}else{
+					document.getElementById('lonlat').value = "根据地址查询位置失败";
+					console.error('根据地址查询位置失败');
+				}
+			});
+		}
+		function polyEditEnd(){			
+			for(var i=0;i<polyEditorArr.length;i++){
+				polyEditorArr[i].close();	
+				polyEditorArr[i]=null;
+			}		
+			polyEditorArr = [];
+			var polygonsArr = mapObj.getAllOverlays('polygon');
+			for(var j=0;j<polygonsArr.length;j++){		
+				 polygonsArr[j].off('click', showInfoP);
+			}
+			
+		}
+		var polyEditorArr =[];
+		function polyEditStart(){
+			endAll();
+			var polygonsArr = mapObj.getAllOverlays('polygon');
+			for(var j=0;j<polygonsArr.length;j++){		
+				 polygonsArr[j].on('click', showInfoP);
+			}
+			
+			/*for(var j=0;j<polygonsArr.length;j++){				
+				var polyEditor = new AMap.PolyEditor(mapObj, polygonsArr[j]);				
+				polyEditor.open();
+				var index = j;
+				polyEditor.on('addnode', function(event) {
+					log.info('触发事件：addnode'+index);
+				})
+
+				polyEditor.on('adjust', function(event) {
+					log.info('触发事件：adjust'+index);
+				})
+
+				polyEditor.on('removenode', function(event) {
+					log.info('触发事件：removenode'+index);
+				})
+
+				polyEditor.on('end', function(event) {
+					log.info('触发事件： end'+index);
+					// event.target 即为编辑后的多边形对象
+				})
+				polyEditorArr.push(polyEditor);
+			}*/		
+		}
         function initPolygon(){
             //加载云图层插件
             mapObj.plugin('AMap.DistrictSearch' , function () { var opts = {
@@ -28,26 +190,39 @@
                 //实例化DistrictSearch
                 district = new AMap.DistrictSearch(opts);
                 //查询成功时的回调函数，定义如何展示请求返回结果
-                AMap.event.addListener(district, 'complete' , function (e){ var bounds = e.districtList[0].boundaries; var polygons = [];
-                    var arr = [];
-                    if (bounds){
-                        for (var i =0, l = bounds.length;i < l; i++){ //生成行政区划polygon
-                            var polygon = new AMap.Polygon({ map:mapObj,strokeWeight:1,
-                                path:bounds[i],
-                                fillOpacity:0.7,
-                                fillColor:'#CCF3FF',
-                                strokeColor:'#CC66CC'
-                            });
-                            polygons.push(polygon);
-                        }
-                        mapObj.setFitView();//地图自适应
-                    }
-                    for (var i=0;i<bounds.length;i++){
-                        var lnglatArr = polygons[i].getPath(); for (var j=0;j<lnglatArr.length;j++){ arr.push(lnglatArr[j].toString()); }
-                    }
+                AMap.event.addListener(district, 'complete' , function (e){ 
+					var mulPolygons = [];
+					var mulAdcode = [];
+					for(var k=0;k<e.districtList.length;k++){					
+						var bounds = e.districtList[k].boundaries; 
+						var polygons = [];                    
+						if (bounds){
+							for (var i =0, l = bounds.length;i < l; i++){ //生成行政区划polygon
+								var polygon = new AMap.Polygon({ 
+									map:mapObj,strokeWeight:1,
+									path:bounds[i],
+									fillOpacity:0.7,
+									fillColor:'#CCF3FF',
+									strokeColor:'#CC66CC'
+								});
+								polygons.push(polygon);
+							}
+							var leftAdcode = e.districtList[k].name+","+e.districtList[k].adcode+","+e.districtList[k].center.toString();						
+							mulAdcode.push(leftAdcode);
+						}
+						for (var i=0;i<bounds.length;i++){
+							var arr = [];
+							var lnglatArr = polygons[i].getPath(); 
+							for (var j=0;j<lnglatArr.length;j++){ 
+								arr.push(lnglatArr[j].toString()); 
+							}
+							mulPolygons.push(arr.join(";"));
+						}
+					}		
+					mapObj.setFitView();//地图自适应    
                     //document.getElementById("info" ).innerHTML = arr.join(";" );
-					$("#info" ).val(arr.join(";" ));
-                    arr = [];//释放数组
+					$("#leftAdcode").val(mulAdcode.join("|" ));   
+					$("#info").val(mulPolygons.join("|" ));                   
                 });
             });
         }
@@ -55,8 +230,9 @@
         *叠加云数据图层
         */
         function drawPolygon() {
-            var level = document.getElementById("level" ).value; var name = document.getElementById("district" ).value; var isClear =
-                document.getElementById("isClear" ).value;
+            var level = document.getElementById("level").value; 
+			var name = document.getElementById("district").value; 
+			var isClear = document.getElementById("isClear").value;
             if (district == "" ) {
                 alert(" 请输入行政区名称！" );
                 return false;
@@ -67,41 +243,177 @@
             district.setLevel(level);//行政区查询 district
             district.search(name); //行政区查询
         }
+		//自定义绘制
+		function load(){
+			var str2 = $("#info" ).val();
+			if (str2 == "" ) {
+                alert(" 请输入行政区坐标串！" );
+                return;
+            }
+			var isClear = document.getElementById("isClear").value;
+			var polygons =[];
+			var mulPolygons = str2.split("|");
+			for(var i=0;i<mulPolygons.length;i++){
+				var points = mulPolygons[i].split(";");
+				var pathArr = [];
+				for(var j=0;j<points.length;j++){
+					var point = points[j].split(",");
+					pathArr.push(point);
+				}			
+				//生成行政区划polygon
+				var polygon = new AMap.Polygon({
+					strokeWeight: 1,
+					path: pathArr,
+					fillOpacity: 0.4,
+					fillColor: '#80d8ff',
+					strokeColor: '#0091ea'
+				});
+				polygons.push(polygon);			
+			}			
+			if (isClear == 1){
+                mapObj.clearMap();//清除地图覆盖物
+            }
+			mapObj.add(polygons);
+            mapObj.setFitView(polygons);//视口自适应
+		}
+
+		function loadNew(){			
+			var polygons = mapObj.getAllOverlays('polygon');
+			var mulPolygons = [];
+			for(var i=0;i<polygons.length;i++){
+				var arr = [];
+				var lnglatArr = polygons[i].getPath(); 
+				for (var j=0;j<lnglatArr.length;j++){ 
+					arr.push(lnglatArr[j].toString()); 
+				}
+				mulPolygons.push(arr.join(";"));
+			}
+			$("#info" ).val(mulPolygons.join("|" )); 			
+		}
+		/*function drawPolygon3(){
+			mouseTool.polygon({
+				strokeColor: "#FF33FF", 
+				strokeOpacity: 1,
+				strokeWeight: 6,
+				strokeOpacity: 0.2,
+				fillColor: '#1791fc',
+				fillOpacity: 0.4,
+				// 线样式还支持 'dashed'
+				strokeStyle: "solid",
+				// strokeStyle是dashed时有效
+				// strokeDasharray: [30,10],
+		  })
+		}*/
+
+		function draw(type){		
+			endAll();
+			switch(type){
+			case 'marker':{
+				mouseTool.marker({
+				  //同Marker的Option设置
+				});
+				break;
+			}
+			case 'polyline':{
+				mouseTool.polyline({
+				  strokeColor:'#80d8ff'
+				  //同Polyline的Option设置
+				});
+				break;
+			}
+			case 'polygon':{
+				mouseTool.polygon({
+				  fillColor:'#00b0ff',
+				  strokeColor:'#80d8ff'
+				  //同Polygon的Option设置
+				});
+				break;
+			}
+			case 'rectangle':{
+				mouseTool.rectangle({
+				  fillColor:'#00b0ff',
+				  strokeColor:'#80d8ff'
+				  //同Polygon的Option设置
+				});
+				break;
+			}
+			case 'circle':{
+				mouseTool.circle({
+				  fillColor:'#00b0ff',
+				  strokeColor:'#80d8ff'
+				  //同Circle的Option设置
+				});
+				break;
+			}
+			}
+		}
+
+		function endAll(){			
+			endRemove();
+			mouseTool.close(false);
+			polyEditEnd();
+		}
+
+		function clearAll(){
+			endAll();
+			mapObj.clearMap();		
+		}
+		
     </script>
 </head>
 <body onLoad ="mapInit()">
 <div style="width:100%;height:480px" id ="iCenter"></div>
-<div style ="height: 80px;width:1000px;">
-    <table style ="width:100%;height:100%;" align ="center"> <tr height ="40px">
-        <td width ="20%" align ="right">选择行政区级别：</td> <td width ="30%">
-        <select id ="level">
-            <option value ="country">国家</option>
-            <option value ="province">省/直辖市</option>
-            <option value ="city" selected ="selected">市</option>
-            <option value ="district">区/县</option>
-            <option value ="biz_area">商圈</option>
-        </select>
-    </td>
-        <td width ="50%" rowspan ="4" align ="center" height ="160px">
-            <textarea id ="info" rows ="3" style ="width:100%;height:100%;padding: 2px 0px 0px 5px; font-size: 12px; color: red; overflow-y: auto">
-            </textarea>
-        </td>
-    </tr>
-        <tr height ="40px">
-            <td align ="right">行政区名称/adcode：</td>
-            <td><input type ="text" name ="district" id ="district" /> <a href="https://a.amap.com/lbs/static/file/AMap_adcode_citycode.xlsx.zip" target="_blank">adcode下载</a></td>
-        </tr>
-        <tr height ="40px">
-            <td align ="right">是否清除覆盖物：</td>
-            <td><select id ="isClear">
-                <option value ="1" selected ="selected">是</option>
-                <option value ="0">否</option>
-            </select>
-            </td>
-        </tr>
-        <tr height ="40px">
-            <td colspan ="2" align ="center"><input type ="button" value =" 绘制" onclick ="drawPolygon()"/></td>
-        </tr>
+<div style ="height: 80px;width:100%;">
+    <table style ="width:100%;height:100%;" align ="center"> 
+		<tr height ="40px">
+			<td width ="15%" align ="right">选择行政区级别：</td> 
+			<td width ="25%">
+				<select id ="level">
+					<option value ="country">国家</option>
+					<option value ="province">省/直辖市</option>
+					<option value ="city" selected ="selected">市</option>
+					<option value ="district">区/县</option>
+					<option value ="biz_area">商圈</option>
+				</select>
+			</td>
+			<td width ="30%" rowspan ="4" align ="center" height ="160px">
+				<textarea id ="info" rows ="3" style ="width:100%;height:100%;padding: 2px 0px 0px 5px; font-size: 12px; color: red; overflow-y: auto"></textarea>
+			</td>
+			<td  width ="30%" align ="center">经纬度: <input type="text" id="lonlat" /><input id="regeo" type="button" onclick="regeoCode()" class="btn" value="经纬度 -> 地址" ></td>
+		</tr>
+		<tr height ="40px">
+			<td align ="right">行政区名称/adcode：</td>
+			<td><input type ="text" name ="district" id ="district" /> <a href="https://a.amap.com/lbs/static/file/AMap_adcode_citycode.xlsx.zip" target="_blank">adcode下载</a></td>	
+			<td align="center">地址: <input id='address' size="30" type="text"> <input id="geo" type="button" onclick="geoCode()" class="btn" value="地址 -> 经纬度" /></td>
+		</tr>
+		<tr height ="40px">
+			<td align ="right">是否清除覆盖物：</td>
+			<td>
+				<select id ="isClear">
+					<option value ="1" selected ="selected">是</option>
+					<option value ="0">否</option>
+				</select>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<input type ="button" value ="绘制" onclick ="drawPolygon()"/>
+			</td>		
+			<td align="center">adcode(地址): <input id='adcode' size="30" type="text"></td>
+		</tr>
+		<tr height ="40px">
+			<td align ="center" colspan="2">名称,adcode,center: <input size="35" id="leftAdcode" type ="text"/></td>
+			<td align ="center">
+				<input type ="button" value ="加载围栏" onclick ="load()"/>
+				<button class="btn" onclick="loadNew()">获取新围栏</button>
+				<button class="btn" onclick="polyEditStart()" style="margin-bottom: 5px">开始编辑</button> 
+				<button class="btn" onclick="polyEditEnd()">结束编辑</button>				
+				<button class="btn" onclick="draw('polygon')" style="margin-bottom: 5px">开始绘制</button>
+				<button class="btn" onclick="mouseTool.close(false)" style="margin-bottom: 5px">关闭绘制</button>
+				<button class="btn" onclick="removeStart()" style="margin-bottom: 5px">开始删除</button>
+				<button class="btn" onclick="endRemove()" style="margin-bottom: 5px">关闭删除</button>
+				<button class="btn" onclick="endAll()" style="margin-bottom: 5px">关闭所有</button>
+				<button class="btn" onclick="clearAll()" style="margin-bottom: 5px">清除</button>
+			</td>
+		</tr>
     </table>
 </div>
 </body>
