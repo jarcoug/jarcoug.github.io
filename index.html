@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+<base href="//webapi.amap.com/ui/1.1/ui/misc/PoiPicker/examples/" />
     <meta http-equiv ="Content-Type" content ="text/html; charset=utf-8">
     <title>行政区划边界查询/绘制/编辑/删除/清除/复制/导出,地址和经纬度在线查询,AMAP在线实例</title>
 	<meta name="author" content="cAn,gjcan_999@163.com"/>
@@ -12,6 +13,69 @@
 	<script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.4.1/jquery.slim.min.js"></script>
     <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
     <script language ="javascript" src ="https://webapi.amap.com/maps?v=1.4.15&key=7de8697669288fc848e12a08f58d995e&plugin=AMap.PolyEditor,AMap.MouseTool,AMap.Geocoder"></script>
+
+	 <!-- UI组件库 1.0 -->
+    <script src="http://webapi.amap.com/ui/1.0/main.js?v=1.1.1"></script>
+	  <style>
+ 
+    
+    #outer-box {
+        height: 410px;
+        padding-right: 300px;
+    }
+    
+    #container {
+        height:410px;
+        width: 100%;
+    }
+    
+    #panel {
+        position: absolute;
+        top: 10px;
+        bottom: 0;
+        right: 0;
+        height: 410px;
+        overflow: auto;
+        width: 300px;
+        z-index: 999;
+        border-left: 1px solid #eaeaea;
+        background: #fff;
+    }
+    
+    #searchBar {
+        height: 30px;
+        background: #ccc;
+    }
+    
+    #searchInput {
+        width: 100%;
+        height: 30px;
+        line-height: 30%;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        border: none;
+        border-bottom: 1px solid #ccc;
+        padding: 0 5px;
+    }
+    
+    #searchResults {
+        overflow: auto;
+        height: 375px;
+    }
+    
+    .amap_lib_placeSearch,
+    .amap-ui-poi-picker-sugg-container {
+        border: none!important;
+    }
+    
+    .amap_lib_placeSearch .poibox.highlight {
+        background-color: #CAE1FF;
+    }
+    
+    .poi-more {
+        display: none!important;
+    }
+    </style>
 	<script language ="javascript">
         var mapObj,district;
 
@@ -94,6 +158,43 @@
 		    });			
 
             initPolygon();
+
+			AMapUI.loadUI(['misc/PoiPicker'], function(PoiPicker) {
+
+        var poiPicker = new PoiPicker({
+            input: 'searchInput',
+            placeSearchOptions: {
+                map: mapObj,
+                pageSize: 10
+            },
+            searchResultsContainer: 'searchResults'
+        });
+
+        poiPicker.on('poiPicked', function(poiResult) {
+
+            poiPicker.hideSearchResults();
+
+            var source = poiResult.source,
+                poi = poiResult.item;
+
+            if (source !== 'search') {
+
+                //suggest来源的，同样调用搜索
+                poiPicker.searchByKeyword(poi.name);
+
+            } else {
+				document.getElementById('lonlat').value =  poi.location.getLng()+","+poi.location.getLat();
+				regeoCode();			
+                //console.log(poi);
+            }
+        });
+
+        poiPicker.onCityReady(function() {
+			var value = $("#searchInput").val();         	
+            poiPicker.searchByKeyword(value);
+           
+        });
+    });
         }
 		var geocoder = new AMap.Geocoder({
 				city: "010", //城市设为北京，默认：“全国”
@@ -357,17 +458,58 @@
 		function clearAll(){
 			endAll();
 			mapObj.clearMap();		
+		}		
+
+		function getBounds(){
+			var polygons = mapObj.getAllOverlays('polygon');
+			var minx = 0;
+			var miny = 0;
+			var maxx = 0;
+			var maxy = 0;
+			for(var i=0;i<polygons.length;i++){			
+				var bounds = polygons[i].getBounds();
+				var southWest = bounds.getSouthWest();
+				var northEast = bounds.getNorthEast();
+				if(i==0){
+					minx = southWest.getLng();
+					miny = southWest.getLat();
+					maxx = northEast.getLng();
+					maxy = northEast.getLat();
+				}else{
+					//计算范围
+                    if (southWest.getLng() < minx) {
+                        minx = southWest.getLng();
+                    }
+                    if (southWest.getLat() < miny) {
+                        miny = southWest.getLat();
+                    }
+                    if (northEast.getLng() > maxx) {
+                        maxx = northEast.getLng();
+                    }
+                    if (northEast.getLat() > maxy) {
+                        maxy = northEast.getLat();
+                    }				
+				}				
+			}
+			$("#boundsInfo" ).val(minx+","+miny+";"+maxx+","+maxy); 			
+			mapObj.setBounds(new AMap.Bounds(new AMap.LngLat(minx,miny),new AMap.LngLat(maxx,maxy)));
 		}
 		
     </script>
 </head>
 <body onLoad ="mapInit()">
-<div style="width:100%;height:480px" id ="iCenter"></div>
+<div style="width:100%;height:460px" id ="iCenter"  class="map"></div>
+ <div id="panel" class="scrollbar1">
+	<div id="searchBar">
+		<input id="searchInput" placeholder="输入关键字搜素POI" />
+	</div>
+    <div id="searchResults"></div>			
+</div>
 <div style ="height: 80px;width:100%;">
     <table style ="width:100%;height:100%;" align ="center"> 
 		<tr height ="40px">
 			<td width ="15%" align ="right">选择行政区级别：</td> 
-			<td width ="25%">
+			<td width ="23%">
 				<select id ="level">
 					<option value ="country">国家</option>
 					<option value ="province">省/直辖市</option>
@@ -376,7 +518,7 @@
 					<option value ="biz_area">商圈</option>
 				</select>
 			</td>
-			<td width ="30%" rowspan ="4" align ="center" height ="160px">
+			<td width ="32%" rowspan ="3" align ="center" height ="120px">
 				<textarea id ="info" rows ="3" style ="width:100%;height:100%;padding: 2px 0px 0px 5px; font-size: 12px; color: red; overflow-y: auto"></textarea>
 			</td>
 			<td  width ="30%" align ="center">经纬度: <input type="text" id="lonlat" /><input id="regeo" type="button" onclick="regeoCode()" class="btn" value="经纬度 -> 地址" ></td>
@@ -398,7 +540,7 @@
 				<input type ="button" value ="绘制" onclick ="drawPolygon()"/>
 			</td>		
 			<td align="center">adcode(地址): <input id='adcode' size="30" type="text"></td>
-		</tr>
+		</tr>		
 		<tr height ="40px">
 			<td align ="center" colspan="2">名称,adcode,center: <input size="35" id="leftAdcode" type ="text"/></td>
 			<td align ="center">
@@ -406,14 +548,16 @@
 				<button class="btn" onclick="loadNew()">获取新围栏</button>
 				<button class="btn" onclick="polyEditStart()" style="margin-bottom: 5px">开始编辑</button> 
 				<button class="btn" onclick="polyEditEnd()">结束编辑</button>				
-				<button class="btn" onclick="draw('polygon')" style="margin-bottom: 5px">开始绘制</button>
+				<button class="btn" onclick="draw('polygon')" style="margin-bottom: 5px">多边形绘制</button>
+				<button class="btn" onclick="draw('rectangle')" style="margin-bottom: 5px">矩形绘制</button>
 				<button class="btn" onclick="mouseTool.close(false)" style="margin-bottom: 5px">关闭绘制</button>
 				<button class="btn" onclick="removeStart()" style="margin-bottom: 5px">开始删除</button>
 				<button class="btn" onclick="endRemove()" style="margin-bottom: 5px">关闭删除</button>
 				<button class="btn" onclick="endAll()" style="margin-bottom: 5px">关闭所有</button>
 				<button class="btn" onclick="clearAll()" style="margin-bottom: 5px">清除</button>
 			</td>
-		</tr>
+			<td align="center">围栏范围: <input id='boundsInfo' size="30" type="text"> <input id="geo" type="button" onclick="getBounds()" class="btn" value="获取范围" /></td>
+		</tr>		
     </table>
 </div>
 </body>
