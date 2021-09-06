@@ -491,7 +491,8 @@
                     }				
 				}				
 			}
-			$("#boundsInfo" ).val(minx+","+miny+";"+maxx+","+maxy); 			
+			//$("#boundsInfo" ).val(minx+","+miny+";"+maxx+","+maxy); 
+			$("#boundsInfo" ).val(minx+","+miny+";"+minx+","+maxy+";"+maxx+","+maxy+";"+maxx+","+miny);
 			mapObj.setBounds(new AMap.Bounds(new AMap.LngLat(minx,miny),new AMap.LngLat(maxx,maxy)));
 		}
 		
