@@ -1,0 +1,81 @@
+﻿<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>TileLayer</title>
+    <style>
+        html,
+        body,
+        #container {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<div class="input-card" style="width: auto;">
+    <div class="input-item">
+        <button class="btn" onclick="addXYZTileLayer()">叠加XYZ图层</button>
+    </div>
+    <div class="input-item">
+        <button class="btn" onclick="map.remove(xyzTileLayer)">移除XYZ图层</button>
+    </div>
+	<div class="input-item">
+        <button class="btn" onclick="addTileLayer()">叠加XYZ-2图层</button>
+    </div>
+    <div class="input-item">
+        <button class="btn" onclick="map.remove(tileLayer)">移除XYZ-2图层</button>
+    </div>
+</div>
+<script src="http://webapi.amap.com/maps?v=1.4.15&key=694e227c147463e80b195ed1676e3995"></script>
+<script>
+    var map = new AMap.Map('container', {
+        resizeEnable: true,
+        zoom: 14,
+        zooms: [3, 20],
+        expandZoomRange: true
+    });
+	//AMap.TileLayer.Flexible继承自AMap.TileLayer
+    var xyzTileLayer = new AMap.TileLayer({
+        // 图块取图地址
+        getTileUrl: 'https://wprd0{1,2,3,4}.is.autonavi.com/appmaptile?x=[x]&y=[y]&z=[z]&size=1&scl=1&style=8&ltype=11',
+        zIndex: 100
+    });
+	//偏移了-getImages2后端又做了wgs84To了，不应该再转
+	var tileLayer = new AMap.TileLayer({zIndex:9999,tileSize:256,getTileUrl:function(x,y,z){
+        var url = "http://58.40.159.253:9533/jswxpplatform/monitor/getImages2.do?x="+x+"&y="+y+"&z="+z;
+        return url;
+    }});
+	function tile2long(x,z) {
+		//return (x/Math.pow(2,z)*360.0-180.0);
+		 var n = Math.pow(2, z);
+		 var lng = x / n * 360.0 - 180.0;
+		 return lng;
+	}
+	 function tile2lat(y,z) {
+		var n=Math.PI-2*Math.PI*y/Math.pow(2,z);
+		return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
+		  /*  
+		var n = Math.pow(2, z);
+		var lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n)));
+		lat = lat * 180.0 / Math.PI;
+		return lat;*/
+	 }
+	  // 添加图层
+    function addXYZTileLayer() {
+        map.add(xyzTileLayer);
+    }
+
+	  // 添加图层
+    function addTileLayer() {
+        map.add(tileLayer);
+
+    }
+</script>
+</body>
+</html>
