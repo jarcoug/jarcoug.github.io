@@ -48,7 +48,7 @@
     });
 	//偏移了-getImages2后端又做了wgs84To了，不应该再转
 	var tileLayer = new AMap.TileLayer({zIndex:9999,tileSize:256,getTileUrl:function(x,y,z){
-        var url = "http://58.40.159.253:9533/jswxpplatform/monitor/getImages2.do?x="+x+"&y="+y+"&z="+z;
+        var url = "58.40.159.253:9533/jswxpplatform/monitor/getImages2.do?x="+x+"&y="+y+"&z="+z;
         return url;
     }});
 	function tile2long(x,z) {
