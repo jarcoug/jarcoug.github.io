@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8">
+	<meta name="author" content="cAn,gjcan_999@163.com"/>
+    <meta name="copyright" content="powered by cAn"/>
+	<meta name="keywords"
+          content="点聚合,H5加载json数据,H5上传本地数据,gpsera.com">
+    <meta name="description"
+          content="运用amap api开发的地图系统,点聚合数据加载和展示">
+	
+    <title>点聚合数据H5加载和展示</title>
+	 <style type="text/css">
+        .fix6 {
+            background-color: rgba(235, 0, 16, 0.7);
+            height: 64px; width: 64px;
+            border: 1px solid rgb(118, 0, 31);
+            border-radius: 32px;
+            box-shadow: rgb(165, 0, 38) 1px 1px 1px;
+            line-height: 64px;
+            color: rgb(0,0,0);
+            font-size: 14px;
+            text-align: center;
+        }
+        .fix5 {
+            background-color: rgba(255, 76, 0, 0.7);
+            height: 50px; width: 50px;
+            border: 1px solid rgb(204, 61, 0);
+            border-radius: 25px;
+            box-shadow: rgb(255, 76, 0) 1px 1px 1px;
+            line-height: 50px;
+            color: rgb(0,0,0);
+            font-size: 14px;
+            text-align: center;
+        }
+        .fix4 {
+            background-color: rgba(256, 165, 93, 0.7);
+            height: 44px; width: 44px;
+            border: 1px solid rgb(179, 117, 65);
+            border-radius: 22px;
+            box-shadow: rgb(256, 165, 93) 1px 1px 1px;
+            line-height: 44px;
+            color: rgb(0, 0, 0);
+            font-size: 14px;
+            text-align: center;
+        }
+        .fix3 {
+            background-color: rgba(241, 235, 39, 0.9);
+            height: 36px; width: 36px;
+            border: 1px solid rgb(145, 135, 90);
+            border-radius: 18px;
+            box-shadow: rgb(241, 235, 39) 1px 1px 1px;
+            line-height: 36px;
+            color:  rgb(0,0,0);
+            font-size: 14px;
+            text-align: center;
+        }
+        .fix2 {
+            background-color: rgba(202, 226, 40, 0.9);
+            height: 24px; width: 24px;
+            border: 1px solid rgb(121, 136, 25);
+            border-radius: 12px;
+            box-shadow: rgb(202, 226, 40) 1px 1px 1px;
+            line-height: 24px;
+            color: rgb(0, 0, 0);
+            font-size: 14px;
+            text-align: center;
+        }
+        .fix1 {
+            background-color: rgba(27, 226, 225, 0.7);
+            height: 20px; width: 20px;
+            border: 1px solid rgb(62, 96, 130);
+            border-radius: 10px;
+            box-shadow: rgb(89, 141, 192) 1px 1px 1px;
+            line-height: 20px;
+            color: rgb(0,0,0);
+            font-size: 14px;
+            text-align: center;
+        }
+
+	#loadingTip {
+        position: absolute;
+        z-index: 9999;
+        top: 0;
+        right: 0;
+        padding: 3px 10px;
+        background: red;
+        color: #fff;
+        font-size: 13px;
+    }
+		/**
+     * 定义my-hover-title 
+     */
+    
+    .amap-ui-pointsimplifier-container .overlay-title.my-hover-title {
+        font-size: 14px;
+        line-height: 200%;
+        font-style: italic;
+        padding: 0 10px;
+    }
+
+    </style>
+</head>
+<body style="padding:0;margin:0">
+    <div style="padding: 0; margin: 0">
+       <div  id="mapContainer" style="display: block; position: absolute; top: 0; left: 0; height: 100%; width: 100%;"></div>       
+       <div style="position:absolute;top:10px;right:10px;background-color:rgba(0, 255, 0,0.4);padding:5px 5px;">
+          <input type="file" id="files" />  
+		  <input type="checkbox" value="1" id="appenddata" />append data
+		  <input type="checkbox" checked="checked" value="1" id="aggregation" />aggregation
+		  <input type="checkbox" value="1" id="points" />points
+		  <button type="button"" id="clearmap" onclick="cleardata();">clear data</button>
+       </div>      
+    </div>
+</body>
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="http://webapi.amap.com/maps?v=1.4.7&key=694e227c147463e80b195ed1676e3995"></script> 
+<script src="http://webapi.amap.com/ui/1.1/main.js?v=1.1.1"></script>
+<script>
+ Date.prototype.Format = function (fmt) { //author: meizz   
+    var o = {  
+        "M+": this.getMonth() + 1, //月份   
+        "d+": this.getDate(), //日   
+        "H+": this.getHours(), //小时   
+        "m+": this.getMinutes(), //分   
+        "s+": this.getSeconds(), //秒   
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度   
+        "S": this.getMilliseconds() //毫秒   
+    };  
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));  
+    for (var k in o)  
+    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));  
+    return fmt;  
+}
+
+var dataList = []
+
+$(document).ready(function(){
+
+	var inputElement = document.getElementById("files");
+	inputElement.addEventListener("change", handleFiles, false);
+	$("input[type='checkbox']").click(function () {
+		//var value = $(this).attr("value");
+		//var state = $(this).is(':checked');		
+		if($(this)[0].id!=="appenddata") {
+			refreshMarker();
+		}		
+		
+	});
+	function handleFiles() {
+	   var selectedFile = document.getElementById("files").files[0];//获取读取的File对象
+	   var name = selectedFile.name;
+	   var size = selectedFile.size;
+	   console.log("文件名:"+name+"大小："+size);
+	   var reader = new FileReader();
+		reader.readAsText(selectedFile);//读取文件的内容 
+		reader.onload = function(){			
+			let data = JSON.parse(this.result);			
+			if ($("#appenddata").is(':checked')) {
+				dataList = dataList.concat(data);
+			} else {
+				dataList = data;
+			}
+			refreshMarker();
+		}; 
+	}
+	
+})
+ </script>
+<script>
+	function getContent(quantity){		
+	    if(parseInt(quantity)>=100000){
+            return [32,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+                "<div class='fix6'>"
+                +quantity+
+                "</div></div></div>"];
+        }else if(parseInt(quantity)>=10000){
+            return [25,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+                "<div class='fix5'>"
+                +quantity+
+                "</div></div></div>"];
+        }else if(parseInt(quantity)>=1000){
+            return [22,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+                "<div class='fix4'>"
+                +quantity+
+                "</div></div></div>"];
+        }else if(parseInt(quantity)>=100){
+            return [18,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+                "<div class='fix3'>"
+                +quantity+
+                "</div></div></div>"];
+        }else if(parseInt(quantity)>=10){
+            return [12,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+                "<div class='fix2'>"
+                +quantity+
+                "</div></div></div>"];
+        }else{
+            return [10,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+                "<div class='fix1'>"
+                +quantity+
+                "</div></div></div>"];
+        }
+
+	}
+
+	function getClusterMarker(text,lon,lat){
+		var content = getContent(text)
+		return new AMap.Marker({ //添加自定义点标记
+        position: [lon, lat], //基点位置
+        offset: new AMap.Pixel(-content[0], -content[0]), //相对于基点的偏移位置
+        draggable: false,  //是否可拖动
+        content: content[1],  
+    });
+	}
+
+	function getPointMarker(text,lon,lat){
+		return new AMap.Marker({ //
+        icon: "http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+		 position: [lon, lat] ,
+		title : text
+    });
+	}
+
+</script>
+
+<script type="text/javascript">
+	function lonLat2Mercator(lon, lat){
+		lon = Number(lon);
+		lat = Number(lat);
+		var M_PI = 3.14159265358979324;
+		var x = lon *20037508.342789/180;
+		var y = Math.log(Math.tan((90+lat)*M_PI/360))/(M_PI/180);
+		y = y * 20037508.34789/180;
+		return {
+			x: x,
+			y: y
+		};
+	}	
+	
+	var map = new AMap.Map('mapContainer', {
+			center:[121.48,31.22],
+			zoom:10,
+			zooms:[0,18]
+		});
+
+
+
+	 AMap.event.addListener(map,'complete',function(){
+		
+	
+    });
+	AMap.event.addListener(map,'moveend',function(){
+		
+		
+    });
+
+
+	AMapUI.load(['ui/misc/PointSimplifier', 'lib/$'], function(PointSimplifier, $) {
+
+        if (!PointSimplifier.supportCanvas) {
+            alert('当前环境不支持 Canvas！');
+            return;
+        }
+
+        var pointSimplifierIns = new PointSimplifier({
+
+            zIndex: 300,
+            map: map,
+            //maxChildrenOfQuadNode:3,
+
+            getPosition: function(item) {
+
+                if (!item) {
+                    return null;
+                }
+
+                //返回经纬度
+                return item.position;
+            },
+            compareDataItem: function(a, b, aIndex, bIndex) {
+
+                if (aIndex === bIndex) {
+                    return 0;
+                }
+
+                return aIndex > bIndex ? -1 : 1;
+            },
+            /*getHoverTitle: function(dataItem, idx) {
+                return '序号: ' + idx;
+            },*/
+			getHoverTitle: function(dataItem, idx) {
+                return dataItem.message;
+            },
+            renderOptions: {
+                //点的样式
+                pointStyle: {
+                    //绘制点占据的矩形区域
+                    content: function(ctx, x, y, width, height) {
+
+                        //注意，这里的width和height可能不同于pointStyle里面的width/height， 高清屏幕下会存在比例缩放
+
+                        //这里绘制一个圆顶锥形
+
+                        var yPos = 1 / 3;
+
+                        var top = [x + width / 2, y],
+                            right = [x + width, y + height * yPos],
+                            bottom = [x + width / 2, y + height],
+                            left = [x, y + height * yPos];
+
+                        ctx.moveTo(left[0], left[1]);
+                        ctx.arcTo(top[0], top[1], right[0], right[1], width / 3);
+                        ctx.lineTo(right[0], right[1]);
+                        ctx.lineTo(bottom[0], bottom[1]);
+                        ctx.lineTo(left[0], left[1]);
+
+                    },
+                    //宽度
+                    width: 15,
+                    //高度
+                    height: 24,
+                    offset: ['-50%', '-100%'],
+                    fillStyle: '#316395',
+                    lineWidth: 1,
+                    strokeStyle: 'gray'
+                },
+                topNAreaStyle: {
+                    content: function(ctx, x, y, width, height) {
+
+                        //绘制一个连接矩形四边中点的菱形
+
+                        var top = [x + width / 2, y],
+                            right = [x + width, y + height * 1 / 2],
+                            bottom = [x + width / 2, y + height],
+                            left = [x, y + height * 1 / 2];
+
+                        ctx.moveTo(top[0], top[1]);
+                        ctx.lineTo(right[0], right[1]);
+                        ctx.lineTo(bottom[0], bottom[1]);
+                        ctx.lineTo(left[0], left[1]);
+                        ctx.lineTo(top[0], top[1]);
+
+                    },
+                },
+                //鼠标hover时，绘制的叠加点的样式
+                pointHoverStyle: {
+                    width: 10,
+                    height: 10,
+                    content: 'circle'
+                },
+                //鼠标hover时显示的title样式
+                hoverTitleStyle: {
+                    classNames: 'my-hover-title',
+                    offset: [0, -15],
+                    position: 'top'
+                }
+            }
+        });
+
+        window.pointSimplifierIns = pointSimplifierIns;	
+		/*$('<div id="loadingTip">加载数据，请稍候...</div>').appendTo(document.body);
+        $.get('https://a.amap.com/amap-ui/static/data/10w.txt', function(csv) {
+
+            var data = csv.split('\n');
+
+            pointSimplifierIns.setData(data);
+
+            $('#loadingTip').remove();
+        });*/
+	
+    });
+	
+	function refreshMarker(){
+		clearmap();		
+		var state = $("#aggregation").is(':checked');
+		var state2 = $("#points").is(':checked');
+		if ((state||state2)&&dataList.length<=0){
+			alert("no data!");
+			return;
+		}
+		if (state){
+			overlayCluster(dataList);
+		}
+		if (state2){
+			overlayPoints(dataList);
+		}
+	}
+	
+	function overlayCluster(result){		
+		//map.clearMap();
+		
+		if(window.pointSimplifierIns){
+			window.pointSimplifierIns.setData(null);
+			window.pointSimplifierIns.render();
+		}
+		for (var i=0;i<result.length;i++){
+			var count = (result[i].quantity || result[i].count)?(result[i].quantity || result[i].count):0;
+			var lon = 0;
+			var lat = 0;
+			if (result[i].coord!=undefined) {
+			    let lonlat = result[i].coord.split(",");
+				lon = lonlat[0];
+				lat = lonlat[1];
+			} else {
+				lon = result[i].longitude||result[i].lon;
+				lat = result[i].latitude||result[i].lat;
+			}
+			var marker =  getClusterMarker(count,lon,lat);
+			marker.setMap(map);
+		}
+	}
+
+	function overlayPoints(result){		
+		//map.clearMap();		
+		/*
+		for (var i=0;i<result.length;i++){
+			var marker =  getPointMarker(result[i].name,result[i].longitude,result[i].latitude) ;
+			marker.setMap(map);
+		}
+		*/
+		$('<div id="loadingTip">加载数据，请稍候...</div>').appendTo(document.body);
+		var datas = []
+		for (var i=0;i<result.length;i++){
+			/*var text = result[i].name?result[i].name:"";			
+			var count = (result[i].quantity || result[i].count)?(result[i].quantity || result[i].count):"";			
+			if (count!=""){
+			   if (text==""){
+				  text =""+ count
+			   } else {
+				  text+= ","+ count
+			   }			 
+			}*/
+			var text= JSON.stringify(result[i]).replaceAll("\"","").replaceAll("{","").replaceAll("}","")
+			var lon = 0;
+			var lat = 0;
+			if (result[i].coord!=undefined) {
+			    let lonlat = result[i].coord.split(",");
+				lon = lonlat[0];
+				lat = lonlat[1];
+			} else {				
+				lon = result[i].longitude||result[i].lon;
+				lat = result[i].latitude||result[i].lat;
+			}				
+			datas.push({
+			 position: [
+                lon,
+                lat
+				],
+			 message:text//text+" [ "+Math.floor(lon * 10000) / 10000+","+Math.floor(lat * 10000) / 10000+" ]"
+			 });
+		}
+		var zoom = map.getZoom();
+		window.pointSimplifierIns.setData(datas);
+		$('#loadingTip').remove();
+	 
+	}
+
+	function clearmap(){
+		map.clearMap();
+		window.pointSimplifierIns.setData(null);		
+	}
+	function cleardata(){
+		clearmap();
+		dataList = [];
+	}
+</script>
+
+</html>
