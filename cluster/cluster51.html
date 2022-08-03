@@ -300,7 +300,7 @@ $(document).ready(function(){
     }
 
 	function isJson(data) {
-		var isjson = (typeof (data) == "object" && Object.prototype.toString.call(data).toLowerCase() == "[object object]" && !data.length);
+		var isjson = (typeof (data) == "object" && Object.prototype.toString.call(data).toLowerCase() == "[object object]");//&& !data.length
 		return isjson;
 	}
 
