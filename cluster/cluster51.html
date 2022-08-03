@@ -112,8 +112,8 @@
 		  <input type="checkbox" value="1" style="" id="appenddata" />append data
 		  <input type="checkbox" checked="checked" value="1" id="aggregation" />aggregation
 		  <input type="checkbox" value="1" id="points" />points
-		  <input type="checkbox" checked="checked" value="1" id="setFitView" />setFitView
-		  <button type="button"" id="clearmap" style="" onclick="cleardata();">clear data</button>
+		  <input type="checkbox" checked="checked" value="1" id="setFitView" />setFitView		 
+		  <button type="button"" id="cleardata" style="" onclick="cleardata();">clear data</button>
        </div>      
     </div>
 </body>
@@ -138,6 +138,7 @@
 }
 
 var dataList = [];
+var expandDataMap = {};
 
 $(document).ready(function(){	
 	var inputElement = document.getElementById("files");
@@ -201,7 +202,7 @@ $(document).ready(function(){
                 +quantity+
                 "</div></div></div>"];
         }else{
-            return [10,"<div  style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
+            return [10,"<div style=' z-index: 100; display: block;'><div  style='opacity: 1;'>" +
                 "<div class='fix1'>"
                 +quantity+
                 "</div></div></div>"];
@@ -211,20 +212,105 @@ $(document).ready(function(){
 
 	function getClusterMarker(text,lon,lat){
 		var content = getContent(text)
-		return new AMap.Marker({ //添加自定义点标记
-        position: [lon, lat], //基点位置
+		return new AMap.Marker({ //添加自定义点标记			
+        position: [lon, lat], //基点位置		
+		//icon: "http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
         offset: new AMap.Pixel(-content[0], -content[0]), //相对于基点的偏移位置
         draggable: false,  //是否可拖动
-        content: content[1],  
+        content: content[1]		
     });
 	}
 
 	function getPointMarker(text,lon,lat){
 		return new AMap.Marker({ //
         icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
-		 position: [lon, lat] ,
+		position: [lon, lat] ,
 		title : text
     });
+	}
+
+	function expandCluster(cid){		
+		var result = expandDataMap[cid];
+		if (result.length==1) {
+			var id = cid + "-0";
+			if (fetchMarker(id)!=null){
+				return;
+			}
+			var obj = result[0];
+			var text= JSON.stringify(obj).replace(new RegExp("\"","gm"),"").replace(new RegExp("{","gm"),"").replace(new RegExp("}","gm"),"")
+			if (obj.coord!=undefined||obj.aggregate_coord!=undefined) {
+				let lonlat = obj.coord?obj.coord.split(","):(obj.aggregate_coord?obj.aggregate_coord.split(","):[0,0]);
+				lon = lonlat[0];
+				lat = lonlat[1];
+			} else {				
+				lon = obj.longitude||obj.lon;
+				lat = obj.latitude||obj.lat;
+			}
+			text = text!=""?text:id;
+			var marker =  getPointMarker(text,lon,lat) ;
+			marker.id = id;
+			marker.setMap(map);
+		} else {
+			for (var i=0;i<result.length;i++){
+				var id = cid + "-" + i;				
+				if (fetchMarker(id)!=null){
+				  continue;
+				}
+				var obj = result[i];
+				if (isString(obj)) {
+					var lonlat = obj.split(",")
+					var text = id;
+					var marker =  getPointMarker(text,lonlat[0],lonlat[1]) ;
+					marker.id = id;
+					marker.setMap(map);
+				} else if(isJson(obj)) {
+					var text= JSON.stringify(obj).replace(new RegExp("\"","gm"),"").replace(new RegExp("{","gm"),"").replace(new RegExp("}","gm"),"")
+					if (obj.coord!=undefined||obj.aggregate_coord!=undefined) {
+						let lonlat = obj.coord?obj.coord.split(","):(obj.aggregate_coord?obj.aggregate_coord.split(","):[0,0]);
+						lon = lonlat[0];
+						lat = lonlat[1];
+					} else {				
+						lon = obj.longitude||obj.lon;
+						lat = obj.latitude||obj.lat;
+					}
+					text = text!=""?text:id;
+					var marker =  getPointMarker(text,lon,lat) ;
+					marker.id = id;
+					marker.setMap(map);
+				}
+				
+			}
+		}
+
+	}
+
+	 function fetchMarker(objId){
+        var overlays = map.getAllOverlays("marker");
+        var marker = null;
+        if(overlays!=null){
+            for(var i=0; i<overlays.length;i++){
+                var overlay = overlays[i];
+                if(overlay.id==objId){
+                    marker = overlay;
+                    break;
+                }
+            }
+        }
+        return marker;
+    }
+
+	function isJson(data) {
+		var isjson = (typeof (data) == "object" && Object.prototype.toString.call(data).toLowerCase() == "[object object]" && !data.length);
+		return isjson;
+	}
+
+	function isString(data) {
+		// TEXT
+		return (typeof data == "string" && data.constructor == String);
+	}
+
+	function isArray(data) {
+		return (data instanceof Array);
 	}
 
 </script>
@@ -249,16 +335,7 @@ $(document).ready(function(){
 			zooms:[0,18]
 		});
 
-
-
-	 AMap.event.addListener(map,'complete',function(){
-		
 	
-    });
-	AMap.event.addListener(map,'moveend',function(){
-		
-		
-    });
 
 
 	AMapUI.load(['ui/misc/PointSimplifier', 'lib/$'], function(PointSimplifier, $) {
@@ -270,7 +347,7 @@ $(document).ready(function(){
 
         var pointSimplifierIns = new PointSimplifier({
 
-            zIndex: 300,
+            zIndex: 101,
             map: map,
             //maxChildrenOfQuadNode:3,
 
@@ -398,8 +475,7 @@ $(document).ready(function(){
 	}
 	
 	function overlayCluster(result){		
-		//map.clearMap();
-		
+		//map.clearMap();		
 		if(window.pointSimplifierIns){
 			window.pointSimplifierIns.setData(null);
 			window.pointSimplifierIns.render();
@@ -417,10 +493,20 @@ $(document).ready(function(){
 				lon = obj.longitude||obj.lon;
 				lat = obj.latitude||obj.lat;
 			}
+			var id = (obj.id || obj.aggregation_id)?(obj.id || obj.aggregation_id):i;
+			expandDataMap[id] = obj.aggregation;
 			var marker =  getClusterMarker(count,lon,lat);
-			marker.setMap(map);
+			marker.id = id;
+			marker.on("click",function(e){
+				expandCluster(e.target.id);		
+			});
+
+			marker.setMap(map);			
+			
+			//marker.emit('click', {target: marker});
 		}
 	}
+   
 
 	function overlayPoints(result){		
 		//map.clearMap();		
@@ -442,7 +528,7 @@ $(document).ready(function(){
 				  text+= ","+ count
 			   }			 
 			}*/
-			var obj = result[i];
+			var obj = JSON.parse(JSON.stringify(result[i]));
 			if (obj.aggregation){
 				delete obj.aggregation;
 			}
@@ -478,6 +564,8 @@ $(document).ready(function(){
 	function cleardata(){
 		clearmap();
 		dataList = [];
+		expandDataMap = {};
+
 	}	
 </script>
 
