@@ -233,7 +233,9 @@ $(document).ready(function(){
 		var result = expandDataMap[cid];
 		if (result.length==1) {
 			var id = cid + "-0";
-			if (fetchMarker(id)!=null){
+			var m = fetchMarker(id);
+			if (m!=null){
+				map.remove(m);
 				return;
 			}
 			var obj = result[0];
@@ -253,8 +255,10 @@ $(document).ready(function(){
 		} else {
 			for (var i=0;i<result.length;i++){
 				var id = cid + "-" + i;				
-				if (fetchMarker(id)!=null){
-				  continue;
+				var m = fetchMarker(id);
+				if (m!=null){
+					map.remove(m);
+					continue;
 				}
 				var obj = result[i];
 				if (isString(obj)) {
