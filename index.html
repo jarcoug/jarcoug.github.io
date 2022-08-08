@@ -391,6 +391,21 @@
 			}
 			$("#info" ).val(mulPolygons.join("|" )); 			
 		}
+
+		function loadPoints(){
+			var str2 = $("#info" ).val();
+			if (str2 == "" ) {
+                alert(" 请输入坐标串！" );
+                return;
+            }
+			var isClear = document.getElementById("isClear").value;						
+			if (isClear == 1){
+                mapObj.clearMap();//清除地图覆盖物
+            }			
+			overlayPoints(str2);
+            mapObj.setFitView();//视口自适应
+		}
+
 		/*function drawPolygon3(){
 			mouseTool.polygon({
 				strokeColor: "#FF33FF", 
@@ -541,6 +556,36 @@
 			mapObj.setBounds(new AMap.Bounds(new AMap.LngLat(minx,miny),new AMap.LngLat(maxx,maxy)));
 		}
 		
+		function overlayPoints(str){		
+			var result = JSON.parse(str);
+			//map.clearMap();
+			for (var i=0;i<result.length;i++){
+				var obj = JSON.parse(JSON.stringify(result[i]));				
+				var text= JSON.stringify(obj).replace(new RegExp("\"","gm"),"").replace(new RegExp("{","gm"),"").replace(new RegExp("}","gm"),"")
+				var lon = 0;
+				var lat = 0;
+				if (obj.coord!=undefined||obj.aggregate_coord!=undefined) {
+					let lonlat = obj.coord?obj.coord.split(","):(obj.aggregate_coord?obj.aggregate_coord.split(","):[0,0]);
+					lon = lonlat[0];
+					lat = lonlat[1];
+				} else {				
+					lon = obj.longitude||obj.lon;
+					lat = obj.latitude||obj.lat;
+				}
+				var marker =  getPointMarker(text,lon,lat);
+				marker.setMap(mapObj);
+				//marker.emit('click', {target: marker});
+			}
+			
+		}
+
+		function getPointMarker(text,lon,lat){
+			return new AMap.Marker({ //
+			icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+			position: [lon, lat] ,
+			title : text
+		});
+		}
     </script>
 </head>
 <body onLoad ="mapInit()">
@@ -591,6 +636,7 @@
 			<td align ="center" colspan="2">名称,adcode,center: <input size="35" id="leftAdcode" type ="text"/></td>
 			<td align ="center">
 				<input type ="button" value ="加载围栏" onclick ="load()"/>
+				<input type ="button" value ="加载点(json)" onclick ="loadPoints()"/>
 				<button class="btn" onclick="loadNew()">获取新围栏</button>
 				<button class="btn" onclick="polyEditStart()" style="margin-bottom: 5px">开始编辑</button> 
 				<button class="btn" onclick="polyEditEnd()">结束编辑</button>				
@@ -603,7 +649,7 @@
 				<button class="btn" onclick="endAll()" style="margin-bottom: 5px">关闭所有</button>
 				<button class="btn" onclick="clearAll()" style="margin-bottom: 5px">清除</button>
 				<button class="btn" onclick="draw('rule')" style="margin-bottom: 5px">距离测量</button>
-				<button class="btn" onclick="draw('measureArea')" style="margin-bottom: 5px">面积测量</button>	
+				<button class="btn" onclick="draw('measureArea')" style="margin-bottom: 5px">面积测量</button>
 			</td>
 			<td align="center">围栏范围: <input id='boundsInfo' size="30" type="text"> <input id="geo" type="button" onclick="getBounds()" class="btn" value="获取范围" /></td>
 		</tr>		
