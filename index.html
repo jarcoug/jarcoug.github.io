@@ -446,6 +446,51 @@
 				});
 				break;
 			}
+			case 'rule':{
+			    mouseTool.rule({
+				startMarkerOptions : {//可缺省
+				    icon: new AMap.Icon({
+					size: new AMap.Size(19, 31),//图标大小
+					imageSize:new AMap.Size(19, 31),
+					image: "https://webapi.amap.com/theme/v1.3/markers/b/start.png"
+				    })
+				},
+				endMarkerOptions : {//可缺省
+				    icon: new AMap.Icon({
+					size: new AMap.Size(19, 31),//图标大小
+					imageSize:new AMap.Size(19, 31),
+					image: "https://webapi.amap.com/theme/v1.3/markers/b/end.png"
+				    }),
+				    offset: new AMap.Pixel(-9, -31)
+				},
+				midMarkerOptions : {//可缺省
+				    icon: new AMap.Icon({
+					size: new AMap.Size(19, 31),//图标大小
+					imageSize:new AMap.Size(19, 31),
+					image: "https://webapi.amap.com/theme/v1.3/markers/b/mid.png"
+				    }),
+				    offset: new AMap.Pixel(-9, -31)
+				},
+				lineOptions : {//可缺省
+				    strokeStyle: "solid",
+				    strokeColor: "#FF33FF",
+				    strokeOpacity: 1,
+				    strokeWeight: 2
+				}
+				//同 RangingTool 的 自定义 设置，缺省为默认样式
+			    });
+			    break;
+			}
+			case 'measureArea':{
+			    mouseTool.measureArea({
+				strokeColor:'#80d8ff',
+				fillColor:'#80d8ff',
+				fillOpacity:0.3
+			      //同 Polygon 的 Option 设置
+			    });
+			    break;
+			}		
+					
 			}
 		}
 
@@ -551,11 +596,14 @@
 				<button class="btn" onclick="polyEditEnd()">结束编辑</button>				
 				<button class="btn" onclick="draw('polygon')" style="margin-bottom: 5px">多边形绘制</button>
 				<button class="btn" onclick="draw('rectangle')" style="margin-bottom: 5px">矩形绘制</button>
+				<!--<button class="btn" onclick="draw('circle')" style="margin-bottom: 5px">圆形绘制</button>-->
 				<button class="btn" onclick="mouseTool.close(false)" style="margin-bottom: 5px">关闭绘制</button>
 				<button class="btn" onclick="removeStart()" style="margin-bottom: 5px">开始删除</button>
 				<button class="btn" onclick="endRemove()" style="margin-bottom: 5px">关闭删除</button>
 				<button class="btn" onclick="endAll()" style="margin-bottom: 5px">关闭所有</button>
 				<button class="btn" onclick="clearAll()" style="margin-bottom: 5px">清除</button>
+				<button class="btn" onclick="draw('rule')" style="margin-bottom: 5px">距离测量</button>
+				<button class="btn" onclick="draw('measureArea')" style="margin-bottom: 5px">面积测量</button>	
 			</td>
 			<td align="center">围栏范围: <input id='boundsInfo' size="30" type="text"> <input id="geo" type="button" onclick="getBounds()" class="btn" value="获取范围" /></td>
 		</tr>		
