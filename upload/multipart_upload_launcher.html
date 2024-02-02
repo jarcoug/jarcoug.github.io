@@ -1,1 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>multipart-upload-launcher</title>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <input type="file" name="file" id="file" />
+    <button onClick="upload()">upload</button>
+	<input type="radio" name="upload_type" id="upload_type" value="1"/>同步
+	<input type="radio" name="upload_type" id="upload_type" value="2" checked/>异步
+	<br/>
+	<br/>	
+	文件大小:<br/><input type="text" name="file_size" id="file_size" style="width:550px" value="" />
+	<br/>
+	上传时长(响应):<br/><input type="text" name="time_tips" id="time_tips" style="width:550px" value="" />
+	<br/>
+	返回内容:<br/><textarea name="content_tips" id="content_tips" rows="10" cols="550" style="width:550px"></textarea>
+	<!--<br/>	
+	oss存储目录:<br/>
+	<input type="text" name="path_prefix" id="path_prefix" style="width:550px" value="/launcher/" />-->
+	<br/>
+	上传服务:<br/>
+	<input type="text" name="server_uri" id="server_uri" style="width:550px" value="http://10.66.8.108:8001" />
+	<br/>
+	上传API:<br/>
+	<input type="text" name="uri" id="uri" style="width:550px" value="/api/v1/daas/oss/launcher/upload" />
+	<br/>
+	获取预上传信息API:<br/>
+	<input type="text" name="pre_uri" id="pre_uri" style="width:550px" value="/api/v1/daas/oss/launcher/upload-presigned-info" />
+	<br/>
+	每片大小(M):<br/>
+	<input type="text" name="per_size" id="per_size" style="width:550px" value="8" />
+	<br/>
+	并发数:<br/>
+	<input type="text" name="current_count" id="current_count" style="width:550px" value="10" />
+    <script type="text/javascript">
+      var bytesPerPiece = 8 * 1024 * 1024 // 每个文件切片大小定为8M
+      var totalPieces
+	  var request_start_time
+	  var tasks =[]
+	  // 请求执行次数
+	  var task_count = 0;
+      //发送请求
+      async function upload() {		
+		tasks = []
+		task_count = 0
+		request_start_time = Date.now() 
+		var _upload_type = document.querySelector('input[name="upload_type"]:checked').value;
+		var server_uri = document.getElementById('server_uri').value
+		server_uri = trimSuffix(server_uri,"/")
+		var _uri = document.getElementById('uri').value		
+		_uri = server_uri + _uri
+		var _pre_uri = document.getElementById('pre_uri').value
+		_pre_uri = server_uri + _pre_uri
+		var _per_size = document.getElementById('per_size').value
+		var _current_count = document.getElementById('current_count').value
+		_current_count = parseInt(_current_count)
+		_per_size = parseInt(_per_size)
+		bytesPerPiece = _per_size * 1024 * 1024
+		
+        var blob = document.getElementById('file').files[0]
+        var start = 0
+        var end
+        var index = 0
+        var filesize = blob.size
+        var filename = blob.name
+		document.getElementById('file_size').value = filesize
+		_pre_uri = _pre_uri+"?fileName="+filename		
+		var preInfo = getUploadId(_pre_uri)
+		var path = preInfo.path
+		var uploadId = preInfo.uploadId
+        //计算文件切片总数
+        totalPieces = Math.ceil(filesize / bytesPerPiece)
+		var result		
+		var count = 0
+        while (start < filesize) {		 
+          end = start + bytesPerPiece
+          if (end > filesize) {
+            end = filesize
+          }
+          var chunk = blob.slice(start, end) //切割文件
+          var sliceIndex = blob.name + index
+		  var part = (index+1)
+		  var totalPart = totalPieces
+          var formData = new FormData()		  
+          formData.append('file', chunk, "bigfile")
+		  formData.append('uploadId', uploadId)
+		  formData.append('totalSize', filesize)
+          formData.append('path', path)
+          formData.append('size', end - start)         
+		  formData.append('totalPart', totalPart)		 
+		  formData.append('part', part)
+          if (end < filesize){
+            formData.append('lastChunk', false)
+          }else{
+            formData.append('lastChunk', true)
+          }		  	
+		  //ajaxUpload(formData,part,totalPart,_uri,_upload_type)
+		
+          start = end
+          index++
 
+		  buildTask(formData,part,totalPart,_uri,_upload_type)		  
+        }
+		multiRequest(_current_count)
+	}
+
+	function getUploadId(url){
+		var result
+		let res = $.ajax({
+			url: url,
+            type: 'GET',
+            cache: false,
+			async:false,
+			headers:{
+				
+			},
+			success:function(res){
+				var _json=JSON.stringify(res);
+				console.info(_json)			
+				result = {"path":res.result.path,"uploadId":res.result.uploadId}
+				
+			},
+			error:function(e){
+				var _json=JSON.stringify(e.responseJSON);
+				console.info(_json)
+				document.getElementById('content_tips').value = "获取uploadId失败"+" \n"+ _json
+				alert(_json)
+			}
+          })
+		return result
+
+	}
+		
+	function buildTask(formData,part,totalPart,url,upload_type){	
+		tasks.push({			
+			"formData":formData,
+			"part":part,
+			"totalPart":totalPart,
+			"url":url,
+			"upload_type":upload_type
+		})		
+	}
+	
+	function multiRequest(maxNum) {
+		task_count = 0
+		const len = tasks.length;		
+		return new Promise((resolve, reject) => {			
+			// 当小于最大并发数时，执行请求
+			while(task_count < maxNum) {
+				run();
+			}			
+		});
+	}
+
+	const hasSuffix = (str, suffix) => {
+	  return str.endsWith(suffix);
+	};
+
+	// Define a function to remove the specified suffix from a string
+	const trimSuffix = (str, suffix) => {
+	  if (hasSuffix(str, suffix)) {
+		debugger;
+		return str.slice(0, -suffix.length);
+	  }
+	  return str;
+	};
+
+	function run() {
+		let cur = task_count++;
+		let obj = tasks[cur]
+		ajaxUpload(obj.formData,obj.part,obj.totalPart,obj.url,obj.upload_type)
+	}
+
+	function ajaxUpload(formData,part,totalPart,url,upload_type){	
+		var async = true
+		if (upload_type=="1"){
+			async = false
+		}
+		var start_time = Date.now()
+		let res = $.ajax({
+			url: url,
+            type: 'POST',
+			async: async,
+            cache: false,
+            data: formData,
+            processData: false,
+            contentType: false,
+			headers:{
+				
+			},
+			success:function(res){							
+				var end_time = Date.now()
+				if(task_count < tasks.length) {
+                    run();
+                }
+				var _json=JSON.stringify(res);
+				console.info(_json)
+				var times = (end_time - start_time)
+				var _times = msToTime(times)
+				var _path = res.result.path
+				var _accessUrl = res.result.accessUrl
+				var _times_tips = "===part"+part+"/"+totalPart+"上传完成==="+"tims:"+_times
+				console.info(_times_tips)			
+				if (document.getElementById('content_tips').value!=""){
+					document.getElementById('content_tips').value = _times_tips + " \n"+ document.getElementById('content_tips').value
+				}else {
+					document.getElementById('content_tips').value = _times_tips
+				}				
+				if (part==totalPart){		
+					var request_times = (end_time - request_start_time)
+					var _request_times = msToTime(request_times)					
+					document.getElementById('time_tips').value = _request_times
+					document.getElementById('content_tips').value = _path+"\n"+_accessUrl +"\n上传成功" + " \n" + document.getElementById('content_tips').value
+					alert("上传成功")
+				}
+				
+			},
+			error:function(e){
+				var _json=JSON.stringify(e.responseJSON);
+				if (document.getElementById('content_tips').value!=""){
+					document.getElementById('content_tips').value = "上传失败"+" \n"+ _json + " \n" + document.getElementById('content_tips').value
+				}else {
+					document.getElementById('content_tips').value = "上传失败"+" \n"+ _json
+				}				
+				if (part==totalPart){
+					alert("上传失败")
+				}
+			}
+          })
+	}
+
+	function msToTime(duration) {
+		var milliseconds = parseInt((duration % 1000) / 100), seconds = parseInt((duration / 1000) % 60),
+			minutes = parseInt((duration / (1000 * 60)) % 60), hours = parseInt((duration / (1000 * 60 * 60)) % 24);
+		hours = (hours < 10) ? "0" + hours : hours;
+		minutes = (minutes < 10) ? "0" + minutes : minutes;
+		seconds = (seconds < 10) ? "0" + seconds : seconds;
+		return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
+	}
+	    
+
+	
+
+    </script>
+  </body>
+</html>
