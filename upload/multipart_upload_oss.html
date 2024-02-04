@@ -42,24 +42,19 @@
     <script type="text/javascript">
 
 	document.addEventListener('DOMContentLoaded', (event) => {
-		// Check if the current page is loaded over HTTPS
-		const isSecure = window.location.protocol === 'https:';
-		if (isSecure){
-			// Set the Content-Security-Policy meta tag accordingly
-			//const metaTag = document.createElement('meta');
-			//metaTag["httpEquiv"] = 'Content-Security-Policy';
-			//metaTag["content"] = "upgrade-insecure-requests";
-			//document.head.appendChild(metaTag)
-			//document.getElementsByTagName('head')[0].appendChild(metaTag);
-	
-			const metaTag2 = document.createElement('meta');
-			metaTag2.httpEquiv = 'Content-Security-Policy';
-			metaTag2.content = isSecure ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval';" : "default-src 'self'; script-src 'self';";
-			document.getElementsByTagName('head')[0].appendChild(metaTag2);
-		}
-	
-	
-	});
+			// Check if the current page is loaded over HTTPS
+			const isSecure = window.location.protocol === 'https:';
+			if (isSecure){
+				// Set the Content-Security-Policy meta tag accordingly
+				const metaTag = document.createElement('meta');
+				metaTag["httpEquiv"] = 'Content-Security-Policy';
+				metaTag["content"] = "upgrade-insecure-requests";
+				//document.head.appendChild(metaTag)
+				document.getElementsByTagName('head')[0].appendChild(metaTag);
+			}
+
+
+		});
 	
 
       var bytesPerPiece = 8 * 1024 * 1024 // 每个文件切片大小定为8M
