@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"/>
+	<!--<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"/>-->
     <title>multipart-upload-launcher</title>
     <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
   </head>
@@ -37,6 +37,18 @@
 	并发数:<br/>
 	<input type="text" name="current_count" id="current_count" style="width:550px" value="10" />
     <script type="text/javascript">
+
+		// Check if the current page is loaded over HTTPS
+		const isSecure = window.location.protocol === 'https:';
+		if (isSecure){
+				// Set the Content-Security-Policy meta tag accordingly
+			const metaTag = document.createElement('meta');
+			metaTag["httpEquiv"] = 'Content-Security-Policy';
+			metaTag["content"] = "upgrade-insecure-requests";
+			//document.head.appendChild(metaTag)
+			document.getElementsByTagName('head')[0].appendChild(metaTag);
+		}
+
       var bytesPerPiece = 8 * 1024 * 1024 // 每个文件切片大小定为8M
       var totalPieces
 	  var request_start_time
@@ -162,8 +174,7 @@
 
 	// Define a function to remove the specified suffix from a string
 	const trimSuffix = (str, suffix) => {
-	  if (hasSuffix(str, suffix)) {
-		debugger;
+	  if (hasSuffix(str, suffix)) {		
 		return str.slice(0, -suffix.length);
 	  }
 	  return str;
