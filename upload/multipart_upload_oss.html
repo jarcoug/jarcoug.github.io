@@ -53,7 +53,7 @@
 			//document.getElementsByTagName('head')[0].appendChild(metaTag);
 	
 			const metaTag2 = document.createElement('meta');
-			metaTag2.name = 'Content-Security-Policy';
+			metaTag2.httpEquiv = 'Content-Security-Policy';
 			metaTag2.content = isSecure ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval';" : "default-src 'self'; script-src 'self';";
 			document.getElementsByTagName('head')[0].appendChild(metaTag2);
 		}
