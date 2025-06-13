@@ -1,542 +1,556 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<base href="//webapi.amap.com/ui/1.1/ui/misc/PoiPicker/examples/" />
-    <meta http-equiv ="Content-Type" content ="text/html; charset=utf-8">
+    <base href="//webapi.amap.com/ui/1.1/ui/misc/PoiPicker/examples/"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>行政区划边界查询/绘制/编辑/删除/清除/复制/导出,地址和经纬度在线查询,AMAP在线实例</title>
-	<meta name="author" content="cAn,gjcan_999@163.com"/>
+    <meta name="author" content="cAn,gjcan_999@163.com"/>
     <meta name="copyright" content="powered by cAn"/>
     <meta name="keywords"
           content="行政区边界,行政区查询,行政区边界查询,多边形绘制,多边形编辑,坐标复制,电子围栏导出,经纬度,查询,经纬度查询,经纬度在线查询,经纬度查找地名,经纬度查询,经纬度转换地名,地名查询经纬度,查询地名返回经纬度,根据经纬度查询地名,amap经纬度,gpsera.com">
     <meta name="description"
           content="运用amap api开发的地图系统,实现行政区边界查询/绘制/编辑/删除/清除/复制/导出,经纬度在线查询,地名查询经纬度,经纬度查询地名,经纬度查找地名,查询地名返回经纬度,根据经纬度查询地名,amap实例">
-	<script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.4.1/jquery.slim.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.4.1/jquery.slim.min.js"></script>
     <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
-    <script language ="javascript" src ="https://webapi.amap.com/maps?v=1.4.15&key=694e227c147463e80b195ed1676e3995&plugin=AMap.PolyEditor,AMap.MouseTool,AMap.Geocoder"></script>
+    <script language="javascript"
+            src="https://webapi.amap.com/maps?v=1.4.15&key=694e227c147463e80b195ed1676e3995&plugin=AMap.PolyEditor,AMap.MouseTool,AMap.Geocoder"></script>
 
-	 <!-- UI组件库 1.0 -->
+    <!-- UI组件库 1.0 -->
     <script src="https://webapi.amap.com/ui/1.0/main.js?v=1.1.1"></script>
-	  <style>
- 
-    
-    #outer-box {
-        height: 410px;
-        padding-right: 300px;
-    }
-    
-    #container {
-        height:410px;
-        width: 100%;
-    }
-    
-    #panel {
-        position: absolute;
-        top: 10px;
-        bottom: 0;
-        right: 0;
-        height: 410px;
-        overflow: auto;
-        width: 300px;
-        z-index: 999;
-        border-left: 1px solid #eaeaea;
-        background: #fff;
-    }
-    
-    #searchBar {
-        height: 30px;
-        background: #ccc;
-    }
-    
-    #searchInput {
-        width: 100%;
-        height: 30px;
-        line-height: 30%;
-        -webkit-box-sizing: border-box;
-        box-sizing: border-box;
-        border: none;
-        border-bottom: 1px solid #ccc;
-        padding: 0 5px;
-    }
-    
-    #searchResults {
-        overflow: auto;
-        height: 375px;
-    }
-    
-    .amap_lib_placeSearch,
-    .amap-ui-poi-picker-sugg-container {
-        border: none!important;
-    }
-    
-    .amap_lib_placeSearch .poibox.highlight {
-        background-color: #CAE1FF;
-    }
-    
-    .poi-more {
-        display: none!important;
-    }
+    <style>
+
+
+        #outer-box {
+            height: 410px;
+            padding-right: 300px;
+        }
+
+        #container {
+            height: 410px;
+            width: 100%;
+        }
+
+        #panel {
+            position: absolute;
+            top: 10px;
+            bottom: 0;
+            right: 0;
+            height: 410px;
+            overflow: auto;
+            width: 300px;
+            z-index: 999;
+            border-left: 1px solid #eaeaea;
+            background: #fff;
+        }
+
+        #searchBar {
+            height: 30px;
+            background: #ccc;
+        }
+
+        #searchInput {
+            width: 100%;
+            height: 30px;
+            line-height: 30%;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            padding: 0 5px;
+        }
+
+        #searchResults {
+            overflow: auto;
+            height: 375px;
+        }
+
+        .amap_lib_placeSearch,
+        .amap-ui-poi-picker-sugg-container {
+            border: none !important;
+        }
+
+        .amap_lib_placeSearch .poibox.highlight {
+            background-color: #CAE1FF;
+        }
+
+        .poi-more {
+            display: none !important;
+        }
     </style>
-	<script language ="javascript">
-        var mapObj,district;
+    <script language="javascript">
+        var mapObj, district;
 
-		 function showInfoP(e){
-			var text = '您在 [ '+e.lnglat.getLng()+','+e.lnglat.getLat()+' ] 的位置点击了多边形！';			
-			//document.querySelector("#text").innerText = text;
-			var t = e.target;
-			t.off('click', showInfoP);		
-			if(t instanceof AMap.Polygon){
-				var polyEditor = new AMap.PolyEditor(mapObj,t);				
-				polyEditor.open();			
-				polyEditor.on('addnode', function(event) {
-					console.info('触发事件：addnode');
-				})
+        function showInfoP(e) {
+            var text = '您在 [ ' + e.lnglat.getLng() + ',' + e.lnglat.getLat() + ' ] 的位置点击了多边形！';
+            //document.querySelector("#text").innerText = text;
+            var t = e.target;
+            t.off('click', showInfoP);
+            if (t instanceof AMap.Polygon) {
+                var polyEditor = new AMap.PolyEditor(mapObj, t);
+                polyEditor.open();
+                polyEditor.on('addnode', function (event) {
+                    console.info('触发事件：addnode');
+                })
 
-				polyEditor.on('adjust', function(event) {
-					console.info('触发事件：adjust');
-				})
+                polyEditor.on('adjust', function (event) {
+                    console.info('触发事件：adjust');
+                })
 
-				polyEditor.on('removenode', function(event) {
-					console.info('触发事件：removenode');
-				})
+                polyEditor.on('removenode', function (event) {
+                    console.info('触发事件：removenode');
+                })
 
-				polyEditor.on('end', function(event) {
-					console.info('触发事件： end');
-					// event.target 即为编辑后的多边形对象
-				})
-				polyEditorArr.push(polyEditor);
-			}
-							
-		}
+                polyEditor.on('end', function (event) {
+                    console.info('触发事件： end');
+                    // event.target 即为编辑后的多边形对象
+                })
+                polyEditorArr.push(polyEditor);
+            }
 
-		function endRemove(){
-			var polygonsArr = mapObj.getAllOverlays('polygon');
-			for(var j=0;j<polygonsArr.length;j++){		
-				 polygonsArr[j].off('click', removeP);
-			}
-		}
+        }
 
-		function removeP(e){
-			var text = '您在 [ '+e.lnglat.getLng()+','+e.lnglat.getLat()+' ] 的位置点击了多边形！';			
-			//document.querySelector("#text").innerText = text;
-			var t = e.target;
-			t.off('click', removeP);
-			if(t instanceof AMap.Polygon){
-				mapObj.remove(t);
-			}								
-		}
-		
-		function removeStart(){
-			endAll();
-			var polygonsArr = mapObj.getAllOverlays('polygon');
-			for(var j=0;j<polygonsArr.length;j++){		
-				 polygonsArr[j].on('click', removeP);
-			}
-		}
-		var mouseTool;
+        function endRemove() {
+            var polygonsArr = mapObj.getAllOverlays('polygon');
+            for (var j = 0; j < polygonsArr.length; j++) {
+                polygonsArr[j].off('click', removeP);
+            }
+        }
+
+        function removeP(e) {
+            var text = '您在 [ ' + e.lnglat.getLng() + ',' + e.lnglat.getLat() + ' ] 的位置点击了多边形！';
+            //document.querySelector("#text").innerText = text;
+            var t = e.target;
+            t.off('click', removeP);
+            if (t instanceof AMap.Polygon) {
+                mapObj.remove(t);
+            }
+        }
+
+        function removeStart() {
+            endAll();
+            var polygonsArr = mapObj.getAllOverlays('polygon');
+            for (var j = 0; j < polygonsArr.length; j++) {
+                polygonsArr[j].on('click', removeP);
+            }
+        }
+
+        var mouseTool;
+
         /*
         *初始化地图对象，加载地图
         */
-        function mapInit(){
-            mapObj = new AMap.Map("iCenter" , {
+        function mapInit() {
+            mapObj = new AMap.Map("iCenter", {
                 view: new AMap.View2D({
-                    center:new AMap.LngLat(116.397428,39.90923),//地图中心点
-                    zoom:10 //地图显示的缩放级别
-                }) });
-				
-				mapObj.plugin(["AMap.ToolBar"], function() {
-					mapObj.addControl(new AMap.ToolBar());
-				});
-			mouseTool = new AMap.MouseTool(mapObj);
-			mouseTool.on('draw', function(event) {
-			  // event.obj 为绘制出来的覆盖物对象
-			  console.info('覆盖物对象绘制完成');
-			})
+                    center: new AMap.LngLat(116.397428, 39.90923),//地图中心点
+                    zoom: 10 //地图显示的缩放级别
+                })
+            });
 
-			mapObj.on('click', function(e) {
-		        document.getElementById("lonlat").value = e.lnglat.getLng()+","+e.lnglat.getLat();	
-				regeoCode(true);
-		    });			
+            mapObj.plugin(["AMap.ToolBar"], function () {
+                mapObj.addControl(new AMap.ToolBar());
+            });
+            mouseTool = new AMap.MouseTool(mapObj);
+            mouseTool.on('draw', function (event) {
+                // event.obj 为绘制出来的覆盖物对象
+                console.info('覆盖物对象绘制完成');
+            })
+
+            mapObj.on('click', function (e) {
+                document.getElementById("lonlat").value = e.lnglat.getLng() + "," + e.lnglat.getLat();
+                regeoCode(true);
+            });
 
             initPolygon();
 
-			AMapUI.loadUI(['misc/PoiPicker'], function(PoiPicker) {
+            AMapUI.loadUI(['misc/PoiPicker'], function (PoiPicker) {
 
-        var poiPicker = new PoiPicker({
-            input: 'searchInput',
-            placeSearchOptions: {
-                map: mapObj,
-                pageSize: 10
-            },
-            searchResultsContainer: 'searchResults'
-        });
+                var poiPicker = new PoiPicker({
+                    input: 'searchInput',
+                    placeSearchOptions: {
+                        map: mapObj,
+                        pageSize: 10
+                    },
+                    searchResultsContainer: 'searchResults'
+                });
 
-        poiPicker.on('poiPicked', function(poiResult) {
+                poiPicker.on('poiPicked', function (poiResult) {
 
-            poiPicker.hideSearchResults();
+                    poiPicker.hideSearchResults();
 
-            var source = poiResult.source,
-                poi = poiResult.item;
+                    var source = poiResult.source,
+                        poi = poiResult.item;
 
-            if (source !== 'search') {
+                    if (source !== 'search') {
 
-                //suggest来源的，同样调用搜索
-                poiPicker.searchByKeyword(poi.name);
+                        //suggest来源的，同样调用搜索
+                        poiPicker.searchByKeyword(poi.name);
 
-            } else {
-				document.getElementById('lonlat').value =  poi.location.getLng()+","+poi.location.getLat();
-				regeoCode();			
-                //console.log(poi);
-            }
-        });
+                    } else {
+                        document.getElementById('lonlat').value = poi.location.getLng() + "," + poi.location.getLat();
+                        regeoCode();
+                        //console.log(poi);
+                    }
+                });
 
-        poiPicker.onCityReady(function() {
-			var value = $("#searchInput").val();         	
-            poiPicker.searchByKeyword(value);
-           
-        });
-    });
-        }
-		var geocoder = new AMap.Geocoder({
-				city: "010", //城市设为北京，默认：“全国”
-				radius: 1000 //范围，默认：500
-			});
-		var marker = new AMap.Marker();;
-		function regeoCode(isMouse) {
-			
-			var lnglat  = document.getElementById('lonlat').value.split(',');
-			mapObj.add(marker);
-			marker.setPosition(lnglat);
-			if(!isMouse){
-				mapObj.setFitView(marker);
-			}
-			geocoder.getAddress(lnglat, function(status, result) {
-				if (status === 'complete'&&result.regeocode) {
-					var address = result.regeocode.formattedAddress;
-					var adcode =  result.regeocode.addressComponent.adcode+"("+address+")";
-					document.getElementById('address').value = address;
-					document.getElementById('adcode').value = adcode;
-				}else{
-					document.getElementById('address').value = "根据经纬度查询地址失败";
-					console.error('根据经纬度查询地址失败');					
-				}
-			});
-		}
+                poiPicker.onCityReady(function () {
+                    var value = $("#searchInput").val();
+                    poiPicker.searchByKeyword(value);
 
-		function geoCode() {
-			var address  = document.getElementById('address').value;
-			geocoder.getLocation(address, function(status, result) {
-				if (status === 'complete'&&result.geocodes.length) {
-					var lnglat = result.geocodes[0].location
-					document.getElementById('lonlat').value = lnglat;
-					var adcode =  result.geocodes[0].adcode+"("+result.geocodes[0].formattedAddress+")";			
-					document.getElementById('adcode').value = adcode;
-					marker.setPosition(lnglat);
-					mapObj.add(marker);
-					mapObj.setFitView(marker);
-				}else{
-					document.getElementById('lonlat').value = "根据地址查询位置失败";
-					console.error('根据地址查询位置失败');
-				}
-			});
-		}
-		function polyEditEnd(){			
-			for(var i=0;i<polyEditorArr.length;i++){
-				polyEditorArr[i].close();	
-				polyEditorArr[i]=null;
-			}		
-			polyEditorArr = [];
-			var polygonsArr = mapObj.getAllOverlays('polygon');
-			for(var j=0;j<polygonsArr.length;j++){		
-				 polygonsArr[j].off('click', showInfoP);
-			}
-			
-		}
-		var polyEditorArr =[];
-		function polyEditStart(){
-			endAll();
-			var polygonsArr = mapObj.getAllOverlays('polygon');
-			for(var j=0;j<polygonsArr.length;j++){		
-				 polygonsArr[j].on('click', showInfoP);
-			}
-			
-			/*for(var j=0;j<polygonsArr.length;j++){				
-				var polyEditor = new AMap.PolyEditor(mapObj, polygonsArr[j]);				
-				polyEditor.open();
-				var index = j;
-				polyEditor.on('addnode', function(event) {
-					log.info('触发事件：addnode'+index);
-				})
-
-				polyEditor.on('adjust', function(event) {
-					log.info('触发事件：adjust'+index);
-				})
-
-				polyEditor.on('removenode', function(event) {
-					log.info('触发事件：removenode'+index);
-				})
-
-				polyEditor.on('end', function(event) {
-					log.info('触发事件： end'+index);
-					// event.target 即为编辑后的多边形对象
-				})
-				polyEditorArr.push(polyEditor);
-			}*/		
-		}
-        function initPolygon(){
-            //加载云图层插件
-            mapObj.plugin('AMap.DistrictSearch' , function () { var opts = {
-                subdistrict: 0, //返回下一级行政区
-                extensions: 'all' , //返回行政区边界坐标组等具体信息 level:'city' //查询行政级别为 市
-            };
-                //实例化DistrictSearch
-                district = new AMap.DistrictSearch(opts);
-                //查询成功时的回调函数，定义如何展示请求返回结果
-                AMap.event.addListener(district, 'complete' , function (e){ 
-					var mulPolygons = [];
-					var mulAdcode = [];
-					for(var k=0;k<e.districtList.length;k++){					
-						var bounds = e.districtList[k].boundaries; 
-						var polygons = [];                    
-						if (bounds){
-							for (var i =0, l = bounds.length;i < l; i++){ //生成行政区划polygon
-								var polygon = new AMap.Polygon({ 
-									map:mapObj,strokeWeight:1,
-									path:bounds[i],
-									fillOpacity:0.7,
-									fillColor:'#CCF3FF',
-									strokeColor:'#CC66CC'
-								});
-								polygons.push(polygon);
-							}
-							var leftAdcode = e.districtList[k].name+","+e.districtList[k].adcode+","+e.districtList[k].center.toString();						
-							mulAdcode.push(leftAdcode);
-						}
-						for (var i=0;i<bounds.length;i++){
-							var arr = [];
-							var lnglatArr = polygons[i].getPath(); 
-							for (var j=0;j<lnglatArr.length;j++){ 
-								arr.push(lnglatArr[j].toString()); 
-							}
-							mulPolygons.push(arr.join(";"));
-						}
-					}		
-					mapObj.setFitView();//地图自适应    
-                    //document.getElementById("info" ).innerHTML = arr.join(";" );
-					$("#leftAdcode").val(mulAdcode.join("|" ));   
-					$("#info").val(mulPolygons.join("|" ));                   
                 });
             });
         }
+
+        var geocoder = new AMap.Geocoder({
+            city: "010", //城市设为北京，默认：“全国”
+            radius: 1000 //范围，默认：500
+        });
+        var marker = new AMap.Marker();
+        ;
+
+        function regeoCode(isMouse) {
+
+            var lnglat = document.getElementById('lonlat').value.split(',');
+            mapObj.add(marker);
+            marker.setPosition(lnglat);
+            if (!isMouse) {
+                mapObj.setFitView(marker);
+            }
+            geocoder.getAddress(lnglat, function (status, result) {
+                if (status === 'complete' && result.regeocode) {
+                    var address = result.regeocode.formattedAddress;
+                    var adcode = result.regeocode.addressComponent.adcode + "(" + address + ")";
+                    document.getElementById('address').value = address;
+                    document.getElementById('adcode').value = adcode;
+                } else {
+                    document.getElementById('address').value = "根据经纬度查询地址失败";
+                    console.error('根据经纬度查询地址失败');
+                }
+            });
+        }
+
+        function geoCode() {
+            var address = document.getElementById('address').value;
+            geocoder.getLocation(address, function (status, result) {
+                if (status === 'complete' && result.geocodes.length) {
+                    var lnglat = result.geocodes[0].location
+                    document.getElementById('lonlat').value = lnglat;
+                    var adcode = result.geocodes[0].adcode + "(" + result.geocodes[0].formattedAddress + ")";
+                    document.getElementById('adcode').value = adcode;
+                    marker.setPosition(lnglat);
+                    mapObj.add(marker);
+                    mapObj.setFitView(marker);
+                } else {
+                    document.getElementById('lonlat').value = "根据地址查询位置失败";
+                    console.error('根据地址查询位置失败');
+                }
+            });
+        }
+
+        function polyEditEnd() {
+            for (var i = 0; i < polyEditorArr.length; i++) {
+                polyEditorArr[i].close();
+                polyEditorArr[i] = null;
+            }
+            polyEditorArr = [];
+            var polygonsArr = mapObj.getAllOverlays('polygon');
+            for (var j = 0; j < polygonsArr.length; j++) {
+                polygonsArr[j].off('click', showInfoP);
+            }
+
+        }
+
+        var polyEditorArr = [];
+
+        function polyEditStart() {
+            endAll();
+            var polygonsArr = mapObj.getAllOverlays('polygon');
+            for (var j = 0; j < polygonsArr.length; j++) {
+                polygonsArr[j].on('click', showInfoP);
+            }
+
+            /*for(var j=0;j<polygonsArr.length;j++){
+                var polyEditor = new AMap.PolyEditor(mapObj, polygonsArr[j]);
+                polyEditor.open();
+                var index = j;
+                polyEditor.on('addnode', function(event) {
+                    log.info('触发事件：addnode'+index);
+                })
+
+                polyEditor.on('adjust', function(event) {
+                    log.info('触发事件：adjust'+index);
+                })
+
+                polyEditor.on('removenode', function(event) {
+                    log.info('触发事件：removenode'+index);
+                })
+
+                polyEditor.on('end', function(event) {
+                    log.info('触发事件： end'+index);
+                    // event.target 即为编辑后的多边形对象
+                })
+                polyEditorArr.push(polyEditor);
+            }*/
+        }
+
+        function initPolygon() {
+            //加载云图层插件
+            mapObj.plugin('AMap.DistrictSearch', function () {
+                var opts = {
+                    subdistrict: 0, //返回下一级行政区
+                    extensions: 'all', //返回行政区边界坐标组等具体信息 level:'city' //查询行政级别为 市
+                };
+                //实例化DistrictSearch
+                district = new AMap.DistrictSearch(opts);
+                //查询成功时的回调函数，定义如何展示请求返回结果
+                AMap.event.addListener(district, 'complete', function (e) {
+                    var mulPolygons = [];
+                    var mulAdcode = [];
+                    for (var k = 0; k < e.districtList.length; k++) {
+                        var bounds = e.districtList[k].boundaries;
+                        var polygons = [];
+                        if (bounds) {
+                            for (var i = 0, l = bounds.length; i < l; i++) { //生成行政区划polygon
+                                var polygon = new AMap.Polygon({
+                                    map: mapObj, strokeWeight: 1,
+                                    path: bounds[i],
+                                    fillOpacity: 0.7,
+                                    fillColor: '#CCF3FF',
+                                    strokeColor: '#CC66CC'
+                                });
+                                polygons.push(polygon);
+                            }
+                            var leftAdcode = e.districtList[k].name + "," + e.districtList[k].adcode + "," + e.districtList[k].center.toString();
+                            mulAdcode.push(leftAdcode);
+                        }
+                        for (var i = 0; i < bounds.length; i++) {
+                            var arr = [];
+                            var lnglatArr = polygons[i].getPath();
+                            for (var j = 0; j < lnglatArr.length; j++) {
+                                arr.push(lnglatArr[j].toString());
+                            }
+                            mulPolygons.push(arr.join(";"));
+                        }
+                    }
+                    mapObj.setFitView();//地图自适应
+                    //document.getElementById("info" ).innerHTML = arr.join(";" );
+                    $("#leftAdcode").val(mulAdcode.join("|"));
+                    $("#info").val(mulPolygons.join("|"));
+                });
+            });
+        }
+
         /*
         *叠加云数据图层
         */
         function drawPolygon() {
-            var level = document.getElementById("level").value; 
-			var name = document.getElementById("district").value; 
-			var isClear = document.getElementById("isClear").value;
-            if (district == "" ) {
-                alert(" 请输入行政区名称！" );
+            var level = document.getElementById("level").value;
+            var name = document.getElementById("district").value;
+            var isClear = document.getElementById("isClear").value;
+            if (district == "") {
+                alert(" 请输入行政区名称！");
                 return false;
             }
-            if (isClear == 1){
+            if (isClear == 1) {
                 mapObj.clearMap();//清除地图覆盖物
             }
             district.setLevel(level);//行政区查询 district
             district.search(name); //行政区查询
         }
-		//自定义绘制
-		function load(){
-			var str2 = $("#info" ).val();
-			if (str2 == "" ) {
-                alert(" 请输入行政区坐标串！" );
+
+        //自定义绘制
+        function load() {
+            var str2 = $("#info").val();
+            if (str2 == "") {
+                alert(" 请输入行政区坐标串！");
                 return;
             }
-			var isClear = document.getElementById("isClear").value;
-			var polygons =[];
-			var mulPolygons = str2.split("|");
-			for(var i=0;i<mulPolygons.length;i++){
-				var points = mulPolygons[i].split(";");
-				var pathArr = [];
-				for(var j=0;j<points.length;j++){
-					var point = points[j].split(",");
-					pathArr.push(point);
-				}			
-				//生成行政区划polygon
-				var polygon = new AMap.Polygon({
-					strokeWeight: 1,
-					path: pathArr,
-					fillOpacity: 0.4,
-					fillColor: '#80d8ff',
-					strokeColor: '#0091ea'
-				});
-				polygons.push(polygon);			
-			}			
-			if (isClear == 1){
+            var isClear = document.getElementById("isClear").value;
+            var polygons = [];
+            var mulPolygons = str2.split("|");
+            for (var i = 0; i < mulPolygons.length; i++) {
+                var points = mulPolygons[i].split(";");
+                var pathArr = [];
+                for (var j = 0; j < points.length; j++) {
+                    var point = points[j].split(",");
+                    pathArr.push(point);
+                }
+                //生成行政区划polygon
+                var polygon = new AMap.Polygon({
+                    strokeWeight: 1,
+                    path: pathArr,
+                    fillOpacity: 0.4,
+                    fillColor: '#80d8ff',
+                    strokeColor: '#0091ea'
+                });
+                polygons.push(polygon);
+            }
+            if (isClear == 1) {
                 mapObj.clearMap();//清除地图覆盖物
             }
-			mapObj.add(polygons);
+            mapObj.add(polygons);
             mapObj.setFitView(polygons);//视口自适应
-		}
+        }
 
-		function loadNew(){			
-			var polygons = mapObj.getAllOverlays('polygon');
-			var mulPolygons = [];
-			for(var i=0;i<polygons.length;i++){
-				var arr = [];
-				var lnglatArr = polygons[i].getPath(); 
-				for (var j=0;j<lnglatArr.length;j++){ 
-					arr.push(lnglatArr[j].toString()); 
-				}
-				mulPolygons.push(arr.join(";"));
-			}
-			$("#info" ).val(mulPolygons.join("|" )); 			
-		}
+        function loadNew() {
+            var polygons = mapObj.getAllOverlays('polygon');
+            var mulPolygons = [];
+            for (var i = 0; i < polygons.length; i++) {
+                var arr = [];
+                var lnglatArr = polygons[i].getPath();
+                for (var j = 0; j < lnglatArr.length; j++) {
+                    arr.push(lnglatArr[j].toString());
+                }
+                mulPolygons.push(arr.join(";"));
+            }
+            $("#info").val(mulPolygons.join("|"));
+        }
 
-		function loadPoints(){
-			var str2 = $("#info" ).val();
-			if (str2 == "" ) {
-                alert(" 请输入坐标串！" );
+        function loadPoints() {
+            var str2 = $("#info").val();
+            if (str2 == "") {
+                alert(" 请输入坐标串！");
                 return;
             }
-			var isClear = document.getElementById("isClear").value;						
-			if (isClear == 1){
+            var isClear = document.getElementById("isClear").value;
+            if (isClear == 1) {
                 mapObj.clearMap();//清除地图覆盖物
-            }			
-			overlayPoints(str2);
+            }
+            overlayPoints(str2);
             mapObj.setFitView();//视口自适应
-		}
+        }
 
-		/*function drawPolygon3(){
-			mouseTool.polygon({
-				strokeColor: "#FF33FF", 
-				strokeOpacity: 1,
-				strokeWeight: 6,
-				strokeOpacity: 0.2,
-				fillColor: '#1791fc',
-				fillOpacity: 0.4,
-				// 线样式还支持 'dashed'
-				strokeStyle: "solid",
-				// strokeStyle是dashed时有效
-				// strokeDasharray: [30,10],
-		  })
-		}*/
+        /*function drawPolygon3(){
+            mouseTool.polygon({
+                strokeColor: "#FF33FF",
+                strokeOpacity: 1,
+                strokeWeight: 6,
+                strokeOpacity: 0.2,
+                fillColor: '#1791fc',
+                fillOpacity: 0.4,
+                // 线样式还支持 'dashed'
+                strokeStyle: "solid",
+                // strokeStyle是dashed时有效
+                // strokeDasharray: [30,10],
+          })
+        }*/
 
-		function draw(type){		
-			endAll();
-			switch(type){
-			case 'marker':{
-				mouseTool.marker({
-				  //同Marker的Option设置
-				});
-				break;
-			}
-			case 'polyline':{
-				mouseTool.polyline({
-				  strokeColor:'#80d8ff'
-				  //同Polyline的Option设置
-				});
-				break;
-			}
-			case 'polygon':{
-				mouseTool.polygon({
-				  fillColor:'#00b0ff',
-				  strokeColor:'#80d8ff'
-				  //同Polygon的Option设置
-				});
-				break;
-			}
-			case 'rectangle':{
-				mouseTool.rectangle({
-				  fillColor:'#00b0ff',
-				  strokeColor:'#80d8ff'
-				  //同Polygon的Option设置
-				});
-				break;
-			}
-			case 'circle':{
-				mouseTool.circle({
-				  fillColor:'#00b0ff',
-				  strokeColor:'#80d8ff'
-				  //同Circle的Option设置
-				});
-				break;
-			}
-			case 'rule':{
-			    mouseTool.rule({
-				startMarkerOptions : {//可缺省
-				    icon: new AMap.Icon({
-					size: new AMap.Size(19, 31),//图标大小
-					imageSize:new AMap.Size(19, 31),
-					image: "https://webapi.amap.com/theme/v1.3/markers/b/start.png"
-				    })
-				},
-				endMarkerOptions : {//可缺省
-				    icon: new AMap.Icon({
-					size: new AMap.Size(19, 31),//图标大小
-					imageSize:new AMap.Size(19, 31),
-					image: "https://webapi.amap.com/theme/v1.3/markers/b/end.png"
-				    }),
-				    offset: new AMap.Pixel(-9, -31)
-				},
-				midMarkerOptions : {//可缺省
-				    icon: new AMap.Icon({
-					size: new AMap.Size(19, 31),//图标大小
-					imageSize:new AMap.Size(19, 31),
-					image: "https://webapi.amap.com/theme/v1.3/markers/b/mid.png"
-				    }),
-				    offset: new AMap.Pixel(-9, -31)
-				},
-				lineOptions : {//可缺省
-				    strokeStyle: "solid",
-				    strokeColor: "#FF33FF",
-				    strokeOpacity: 1,
-				    strokeWeight: 2
-				}
-				//同 RangingTool 的 自定义 设置，缺省为默认样式
-			    });
-			    break;
-			}
-			case 'measureArea':{
-			    mouseTool.measureArea({
-				strokeColor:'#80d8ff',
-				fillColor:'#80d8ff',
-				fillOpacity:0.3
-			      //同 Polygon 的 Option 设置
-			    });
-			    break;
-			}		
-					
-			}
-		}
+        function draw(type) {
+            endAll();
+            switch (type) {
+                case 'marker': {
+                    mouseTool.marker({
+                        //同Marker的Option设置
+                    });
+                    break;
+                }
+                case 'polyline': {
+                    mouseTool.polyline({
+                        strokeColor: '#80d8ff'
+                        //同Polyline的Option设置
+                    });
+                    break;
+                }
+                case 'polygon': {
+                    mouseTool.polygon({
+                        fillColor: '#00b0ff',
+                        strokeColor: '#80d8ff'
+                        //同Polygon的Option设置
+                    });
+                    break;
+                }
+                case 'rectangle': {
+                    mouseTool.rectangle({
+                        fillColor: '#00b0ff',
+                        strokeColor: '#80d8ff'
+                        //同Polygon的Option设置
+                    });
+                    break;
+                }
+                case 'circle': {
+                    mouseTool.circle({
+                        fillColor: '#00b0ff',
+                        strokeColor: '#80d8ff'
+                        //同Circle的Option设置
+                    });
+                    break;
+                }
+                case 'rule': {
+                    mouseTool.rule({
+                        startMarkerOptions: {//可缺省
+                            icon: new AMap.Icon({
+                                size: new AMap.Size(19, 31),//图标大小
+                                imageSize: new AMap.Size(19, 31),
+                                image: "https://webapi.amap.com/theme/v1.3/markers/b/start.png"
+                            })
+                        },
+                        endMarkerOptions: {//可缺省
+                            icon: new AMap.Icon({
+                                size: new AMap.Size(19, 31),//图标大小
+                                imageSize: new AMap.Size(19, 31),
+                                image: "https://webapi.amap.com/theme/v1.3/markers/b/end.png"
+                            }),
+                            offset: new AMap.Pixel(-9, -31)
+                        },
+                        midMarkerOptions: {//可缺省
+                            icon: new AMap.Icon({
+                                size: new AMap.Size(19, 31),//图标大小
+                                imageSize: new AMap.Size(19, 31),
+                                image: "https://webapi.amap.com/theme/v1.3/markers/b/mid.png"
+                            }),
+                            offset: new AMap.Pixel(-9, -31)
+                        },
+                        lineOptions: {//可缺省
+                            strokeStyle: "solid",
+                            strokeColor: "#FF33FF",
+                            strokeOpacity: 1,
+                            strokeWeight: 2
+                        }
+                        //同 RangingTool 的 自定义 设置，缺省为默认样式
+                    });
+                    break;
+                }
+                case 'measureArea': {
+                    mouseTool.measureArea({
+                        strokeColor: '#80d8ff',
+                        fillColor: '#80d8ff',
+                        fillOpacity: 0.3
+                        //同 Polygon 的 Option 设置
+                    });
+                    break;
+                }
 
-		function endAll(){			
-			endRemove();
-			mouseTool.close(false);
-			polyEditEnd();
-		}
+            }
+        }
 
-		function clearAll(){
-			endAll();
-			mapObj.clearMap();		
-		}		
+        function endAll() {
+            endRemove();
+            mouseTool.close(false);
+            polyEditEnd();
+        }
 
-		function getBounds(){
-			var polygons = mapObj.getAllOverlays('polygon');
-			var minx = 0;
-			var miny = 0;
-			var maxx = 0;
-			var maxy = 0;
-			for(var i=0;i<polygons.length;i++){			
-				var bounds = polygons[i].getBounds();
-				var southWest = bounds.getSouthWest();
-				var northEast = bounds.getNorthEast();
-				if(i==0){
-					minx = southWest.getLng();
-					miny = southWest.getLat();
-					maxx = northEast.getLng();
-					maxy = northEast.getLat();
-				}else{
-					//计算范围
+        function clearAll() {
+            endAll();
+            mapObj.clearMap();
+        }
+
+        function getBounds() {
+            var polygons = mapObj.getAllOverlays('polygon');
+            var minx = 0;
+            var miny = 0;
+            var maxx = 0;
+            var maxy = 0;
+            for (var i = 0; i < polygons.length; i++) {
+                var bounds = polygons[i].getBounds();
+                var southWest = bounds.getSouthWest();
+                var northEast = bounds.getNorthEast();
+                if (i == 0) {
+                    minx = southWest.getLng();
+                    miny = southWest.getLat();
+                    maxx = northEast.getLng();
+                    maxy = northEast.getLat();
+                } else {
+                    //计算范围
                     if (southWest.getLng() < minx) {
                         minx = southWest.getLng();
                     }
@@ -548,111 +562,269 @@
                     }
                     if (northEast.getLat() > maxy) {
                         maxy = northEast.getLat();
-                    }				
-				}				
-			}
-			//$("#boundsInfo" ).val(minx+","+miny+";"+maxx+","+maxy); 
-			$("#boundsInfo" ).val(minx+","+miny+";"+minx+","+maxy+";"+maxx+","+maxy+";"+maxx+","+miny);
-			mapObj.setBounds(new AMap.Bounds(new AMap.LngLat(minx,miny),new AMap.LngLat(maxx,maxy)));
-		}
-		
-		function overlayPoints(str){		
-			var result = JSON.parse(str);
-			//map.clearMap();
-			for (var i=0;i<result.length;i++){
-				var obj = JSON.parse(JSON.stringify(result[i]));				
-				var text= JSON.stringify(obj).replace(new RegExp("\"","gm"),"").replace(new RegExp("{","gm"),"").replace(new RegExp("}","gm"),"")
-				var lon = 0;
-				var lat = 0;
-				if (obj.coord!=undefined||obj.aggregate_coord!=undefined) {
-					let lonlat = obj.coord?obj.coord.split(","):(obj.aggregate_coord?obj.aggregate_coord.split(","):[0,0]);
-					lon = lonlat[0];
-					lat = lonlat[1];
-				} else {				
-					lon = obj.longitude||obj.lon;
-					lat = obj.latitude||obj.lat;
-				}
-				var marker =  getPointMarker(text,lon,lat);
-				marker.setMap(mapObj);
-				//marker.emit('click', {target: marker});
-			}
-			
-		}
+                    }
+                }
+            }
+            //$("#boundsInfo" ).val(minx+","+miny+";"+maxx+","+maxy);
+            $("#boundsInfo").val(minx + "," + miny + ";" + minx + "," + maxy + ";" + maxx + "," + maxy + ";" + maxx + "," + miny);
+            mapObj.setBounds(new AMap.Bounds(new AMap.LngLat(minx, miny), new AMap.LngLat(maxx, maxy)));
+        }
 
-		function getPointMarker(text,lon,lat){
-			return new AMap.Marker({ //
-			icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
-			position: [lon, lat] ,
-			title : text
-		});
-		}
+        function overlayPoints(str) {
+            var result = JSON.parse(str);
+            //map.clearMap();
+            for (var i = 0; i < result.length; i++) {
+                var obj = JSON.parse(JSON.stringify(result[i]));
+                var text = JSON.stringify(obj).replace(new RegExp("\"", "gm"), "").replace(new RegExp("{", "gm"), "").replace(new RegExp("}", "gm"), "")
+                var lon = 0;
+                var lat = 0;
+                if (obj.coord != undefined || obj.aggregate_coord != undefined) {
+                    let lonlat = obj.coord ? obj.coord.split(",") : (obj.aggregate_coord ? obj.aggregate_coord.split(",") : [0, 0]);
+                    lon = lonlat[0];
+                    lat = lonlat[1];
+                } else {
+                    lon = obj.longitude || obj.lon;
+                    lat = obj.latitude || obj.lat;
+                }
+                var marker = getPointMarker(text, lon, lat);
+                marker.setMap(mapObj);
+                //marker.emit('click', {target: marker});
+            }
+
+        }
+
+        function getPointMarker(text, lon, lat) {
+            return new AMap.Marker({ //
+                icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+                position: [lon, lat],
+                title: text
+            });
+        }
+
+        var infoWindow;
+
+        function showInfoWindow(position, content) {
+            if (!infoWindow) {
+                infoWindow = new AMap.InfoWindow({
+                    offset: new AMap.Pixel(0, -30)
+                });
+            }
+            infoWindow.setContent(content);
+            infoWindow.setPosition(position);
+            infoWindow.open(mapObj);
+        }
+
+        function loadGeoJSON() {
+            try {
+                var geojsonText = document.getElementById("info").value.trim();
+                if (!geojsonText) {
+                    alert("请输入geojson数据");
+                    return;
+                }
+
+                var geojson = JSON.parse(geojsonText);
+                if (!geojson.type || geojson.type !== "FeatureCollection" || !geojson.features) {
+                    alert("无效的GeoJSON格式: 必须是FeatureCollection类型");
+                    return;
+                }
+
+                // 清除现有覆盖物
+                mapObj.clearMap();
+
+                // 加载GeoJSON数据
+                geojson.features.forEach(function (feature) {
+                    if (!feature.geometry) return;
+
+                    var properties = feature.properties || {};
+
+                    // 构建信息窗口内容
+                    var infoWindowContent = "<pre>" + JSON.stringify(properties, null, 2) + "</pre>";
+
+                    switch (feature.geometry.type) {
+                        case "Point":
+                            var marker = new AMap.Marker({
+                                position: feature.geometry.coordinates,
+                                title: "属性信息",
+                                properties: properties // 自定义属性
+                            });
+                            marker.setMap(mapObj);
+                            // 绑定点击事件
+                            marker.on('click', function () {
+                                var content = "<pre>" + JSON.stringify(marker.getOptions().properties, null, 2) + "</pre>";
+                                showInfoWindow(marker.getPosition(), content);
+                            });
+                            break;
+
+                        case "MultiPoint":
+                            feature.geometry.coordinates.forEach(function (coord) {
+                                var marker = new AMap.Marker({
+                                    position: coord,
+                                    title: "属性信息",
+                                    properties: properties // 自定义属性
+                                });
+                                marker.setMap(mapObj);
+                                // 绑定点击事件
+                                marker.on('click', function () {
+                                    var content = "<pre>" + JSON.stringify(marker.getOptions().properties, null, 2) + "</pre>";
+                                    showInfoWindow(marker.getPosition(), content);
+                                });
+                            });
+                            break;
+
+                        case "LineString":
+                            var polyline = new AMap.Polyline({
+                                path: feature.geometry.coordinates,
+                                strokeColor: "#3366FF",
+                                strokeWeight: 4,
+                                strokeOpacity: 0.8
+                            });
+                            polyline.setMap(mapObj);
+                            // 绑定点击事件
+                            polyline.on('click', function (e) {
+                                var content = "<pre>" + JSON.stringify(properties, null, 2) + "</pre>";
+                                showInfoWindow(e.lnglat, content);
+                            });
+                            break;
+
+                        case "MultiLineString":
+                            feature.geometry.coordinates.forEach(function (line) {
+                                var polyline = new AMap.Polyline({
+                                    path: line,
+                                    strokeColor: "#3366FF",
+                                    strokeWeight: 4,
+                                    strokeOpacity: 0.8
+                                });
+                                polyline.setMap(mapObj);
+                                // 绑定点击事件
+                                polyline.on('click', function (e) {
+                                    var content = "<pre>" + JSON.stringify(properties, null, 2) + "</pre>";
+                                    showInfoWindow(e.lnglat, content);
+                                });
+                            });
+                            break;
+
+                        case "Polygon":
+                            var polygon = new AMap.Polygon({
+                                path: feature.geometry.coordinates[0],
+                                strokeColor: properties.strokeColor || "#FF33FF",
+                                strokeWeight: properties.strokeWeight || 2,
+                                strokeOpacity: properties.strokeOpacity || 0.8,
+                                fillColor: properties.fillColor || "#1791fc",
+                                fillOpacity: properties.fillOpacity || 0.4
+                            });
+                            polygon.setMap(mapObj);
+                            // 绑定点击事件
+                            polygon.on('click', function (e) {
+                                var content = "<pre>" + JSON.stringify(properties, null, 2) + "</pre>";
+                                showInfoWindow(e.lnglat, content);
+                            });
+                            break;
+
+                        case "MultiPolygon":
+                            feature.geometry.coordinates.forEach(function (polygonCoords) {
+                                var polygon = new AMap.Polygon({
+                                    path: polygonCoords[0],
+                                    strokeColor: properties.strokeColor || "#FF33FF",
+                                    strokeWeight: properties.strokeWeight || 2,
+                                    strokeOpacity: properties.strokeOpacity || 0.8,
+                                    fillColor: properties.fillColor || "#1791fc",
+                                    fillOpacity: properties.fillOpacity || 0.4
+                                });
+                                polygon.setMap(mapObj);
+                                // 绑定点击事件
+                                polygon.on('click', function (e) {
+                                    var content = "<pre>" + JSON.stringify(properties, null, 2) + "</pre>";
+                                    showInfoWindow(e.lnglat, content);
+                                });
+                            });
+                            break;
+                    }
+                });
+
+                mapObj.setFitView();
+            } catch (e) {
+                alert("GeoJSON解析错误: " + e.message);
+                console.error(e);
+            }
+        }
     </script>
 </head>
-<body onLoad ="mapInit()">
-<div style="width:100%;height:460px" id ="iCenter"  class="map"></div>
- <div id="panel" class="scrollbar1">
-	<div id="searchBar">
-		<input id="searchInput" placeholder="输入关键字搜素POI" />
-	</div>
-    <div id="searchResults"></div>			
+<body onLoad="mapInit()">
+<div style="width:100%;height:460px" id="iCenter" class="map"></div>
+<div id="panel" class="scrollbar1">
+    <div id="searchBar">
+        <input id="searchInput" placeholder="输入关键字搜素POI"/>
+    </div>
+    <div id="searchResults"></div>
 </div>
-<div style ="height: 80px;width:100%;">
-    <table style ="width:100%;height:100%;" align ="center"> 
-		<tr height ="40px">
-			<td width ="15%" align ="right">选择行政区级别：</td> 
-			<td width ="23%">
-				<select id ="level">
-					<option value ="country">国家</option>
-					<option value ="province">省/直辖市</option>
-					<option value ="city" selected ="selected">市</option>
-					<option value ="district">区/县</option>
-					<option value ="biz_area">商圈</option>
-				</select>
-			</td>
-			<td width ="32%" rowspan ="3" align ="center" height ="120px">
-				<textarea id ="info" rows ="3" style ="width:100%;height:100%;padding: 2px 0px 0px 5px; font-size: 12px; color: red; overflow-y: auto"></textarea>
-			</td>
-			<td  width ="30%" align ="center">经纬度: <input type="text" id="lonlat" /><input id="regeo" type="button" onclick="regeoCode()" class="btn" value="经纬度 -> 地址" ></td>
-		</tr>
-		<tr height ="40px">
-			<td align ="right">行政区名称/adcode：</td>
-			<td><input type ="text" name ="district" id ="district" /> <a href="https://a.amap.com/lbs/static/file/AMap_adcode_citycode.xlsx.zip" target="_blank">adcode下载</a></td>	
-			<td align="center">地址: <input id='address' size="30" type="text"> <input id="geo" type="button" onclick="geoCode()" class="btn" value="地址 -> 经纬度" /></td>
-		</tr>
-		<tr height ="40px">
-			<td align ="right">是否清除覆盖物：</td>
-			<td>
-				<select id ="isClear">
-					<option value ="1" selected ="selected">是</option>
-					<option value ="0">否</option>
-				</select>
-				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				<input type ="button" value ="绘制" onclick ="drawPolygon()"/>
-			</td>		
-			<td align="center">adcode(地址): <input id='adcode' size="30" type="text"></td>
-		</tr>		
-		<tr height ="40px">
-			<td align ="center" colspan="2">名称,adcode,center: <input size="35" id="leftAdcode" type ="text"/></td>
-			<td align ="center">
-				<input type ="button" value ="加载围栏" onclick ="load()"/>
-				<input type ="button" value ="加载点(json)" onclick ="loadPoints()"/>
-				<button class="btn" onclick="loadNew()">获取新围栏</button>
-				<button class="btn" onclick="polyEditStart()" style="margin-bottom: 5px">开始编辑</button> 
-				<button class="btn" onclick="polyEditEnd()">结束编辑</button>				
-				<button class="btn" onclick="draw('polygon')" style="margin-bottom: 5px">多边形绘制</button>
-				<button class="btn" onclick="draw('rectangle')" style="margin-bottom: 5px">矩形绘制</button>
-				<!--<button class="btn" onclick="draw('circle')" style="margin-bottom: 5px">圆形绘制</button>-->
-				<button class="btn" onclick="mouseTool.close(false)" style="margin-bottom: 5px">关闭绘制</button>
-				<button class="btn" onclick="removeStart()" style="margin-bottom: 5px">开始删除</button>
-				<button class="btn" onclick="endRemove()" style="margin-bottom: 5px">关闭删除</button>
-				<button class="btn" onclick="endAll()" style="margin-bottom: 5px">关闭所有</button>
-				<button class="btn" onclick="clearAll()" style="margin-bottom: 5px">清除</button>
-				<button class="btn" onclick="draw('rule')" style="margin-bottom: 5px">距离测量</button>
-				<button class="btn" onclick="draw('measureArea')" style="margin-bottom: 5px">面积测量</button>
-			</td>
-			<td align="center">围栏范围: <input id='boundsInfo' size="30" type="text"> <input id="geo" type="button" onclick="getBounds()" class="btn" value="获取范围" /></td>
-		</tr>		
+<div style="height: 80px;width:100%;">
+    <table style="width:100%;height:100%;" align="center">
+        <tr height="40px">
+            <td width="15%" align="right">选择行政区级别：</td>
+            <td width="23%">
+                <select id="level">
+                    <option value="country">国家</option>
+                    <option value="province">省/直辖市</option>
+                    <option value="city" selected="selected">市</option>
+                    <option value="district">区/县</option>
+                    <option value="biz_area">商圈</option>
+                </select>
+            </td>
+            <td width="32%" rowspan="3" align="center" height="120px">
+                <textarea id="info" rows="3"
+                          style="width:100%;height:100%;padding: 2px 0px 0px 5px; font-size: 12px; color: red; overflow-y: auto"></textarea>
+            </td>
+            <td width="30%" align="center">经纬度: <input type="text" id="lonlat"/><input id="regeo" type="button"
+                                                                                       onclick="regeoCode()" class="btn"
+                                                                                       value="经纬度 -> 地址"></td>
+        </tr>
+        <tr height="40px">
+            <td align="right">行政区名称/adcode：</td>
+            <td><input type="text" name="district" id="district"/> <a
+                    href="https://a.amap.com/lbs/static/file/AMap_adcode_citycode.xlsx.zip" target="_blank">adcode下载</a>
+            </td>
+            <td align="center">地址: <input id='address' size="30" type="text"> <input id="geo" type="button"
+                                                                                     onclick="geoCode()" class="btn"
+                                                                                     value="地址 -> 经纬度"/></td>
+        </tr>
+        <tr height="40px">
+            <td align="right">是否清除覆盖物：</td>
+            <td>
+                <select id="isClear">
+                    <option value="1" selected="selected">是</option>
+                    <option value="0">否</option>
+                </select>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <input type="button" value="绘制" onclick="drawPolygon()"/>
+            </td>
+            <td align="center">adcode(地址): <input id='adcode' size="30" type="text"></td>
+        </tr>
+        <tr height="40px">
+            <td align="center" colspan="2">名称,adcode,center: <input size="35" id="leftAdcode" type="text"/></td>
+            <td align="center">
+                <input type="button" value="加载围栏" onclick="load()"/>
+                <input type="button" value="加载点(json)" onclick="loadPoints()"/>
+                <button class="btn" onclick="loadNew()">获取新围栏</button>
+                <button class="btn" onclick="polyEditStart()" style="margin-bottom: 5px">开始编辑</button>
+                <button class="btn" onclick="polyEditEnd()">结束编辑</button>
+                <button class="btn" onclick="draw('polygon')" style="margin-bottom: 5px">多边形绘制</button>
+                <button class="btn" onclick="draw('rectangle')" style="margin-bottom: 5px">矩形绘制</button>
+                <!--<button class="btn" onclick="draw('circle')" style="margin-bottom: 5px">圆形绘制</button>-->
+                <button class="btn" onclick="mouseTool.close(false)" style="margin-bottom: 5px">关闭绘制</button>
+                <button class="btn" onclick="removeStart()" style="margin-bottom: 5px">开始删除</button>
+                <button class="btn" onclick="endRemove()" style="margin-bottom: 5px">关闭删除</button>
+                <button class="btn" onclick="endAll()" style="margin-bottom: 5px">关闭所有</button>
+                <button class="btn" onclick="clearAll()" style="margin-bottom: 5px">清除</button>
+                <button class="btn" onclick="draw('rule')" style="margin-bottom: 5px">距离测量</button>
+                <button class="btn" onclick="draw('measureArea')" style="margin-bottom: 5px">面积测量</button>
+                <button class="btn" onclick="loadGeoJSON()" style="margin-bottom: 5px">加载geojson</button>
+            </td>
+            <td align="center">围栏范围: <input id='boundsInfo' size="30" type="text"> <input id="geo" type="button"
+                                                                                          onclick="getBounds()"
+                                                                                          class="btn" value="获取范围"/>
+            </td>
+        </tr>
     </table>
 </div>
 </body>
