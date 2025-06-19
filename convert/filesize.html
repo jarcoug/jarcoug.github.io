@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件大小换算工具</title>
+    <link href="https://cdn.jsdmirror.com/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .t-big-margin {
+            margin-top: 15px;
+        }
+        .container {
+            max-width: 600px;
+            margin-top: 30px;
+        }
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .input-group-addon {
+            min-width: 80px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文件大小换算工具</h1>
+        <div class="input-group">
+            <input type="number" id="bitTxt" class="form-control filesizetxt" aria-describedby="basic-addon2">
+            <span class="input-group-addon">Bit</span>
+        </div>
+        <div class="input-group t-big-margin">
+            <input type="number" id="bytesTxt" class="form-control filesizetxt" aria-describedby="basic-addon2">
+            <span class="input-group-addon">Bytes</span>
+        </div>
+        <div class="input-group t-big-margin">
+            <input type="number" id="kbTxt" class="form-control filesizetxt" aria-describedby="basic-addon2">
+            <span class="input-group-addon">KB</span>
+        </div>
+        <div class="input-group t-big-margin">
+            <input type="number" id="mbTxt" class="form-control filesizetxt" aria-describedby="basic-addon2">
+            <span class="input-group-addon">MB</span>
+        </div>
+        <div class="input-group t-big-margin">
+            <input type="number" id="gbTxt" class="form-control filesizetxt" aria-describedby="basic-addon2">
+            <span class="input-group-addon">GB</span>
+        </div>
+        <div class="input-group t-big-margin">
+            <input type="number" id="tbTxt" class="form-control filesizetxt" aria-describedby="basic-addon2">
+            <span class="input-group-addon">TB</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.filesizetxt');
+            
+            // 为每个输入框添加事件监听器
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    // 获取当前输入的值和单位
+                    const value = parseFloat(this.value);
+                    if (isNaN(value)) return;
+                    
+                    const unit = this.nextElementSibling.textContent.trim();
+                    
+                    // 转换为字节
+                    let bytes;
+                    switch(unit) {
+                        case 'Bit':
+                            bytes = value / 8;
+                            break;
+                        case 'Bytes':
+                            bytes = value;
+                            break;
+                        case 'KB':
+                            bytes = value * 1024;
+                            break;
+                        case 'MB':
+                            bytes = value * 1024 * 1024;
+                            break;
+                        case 'GB':
+                            bytes = value * 1024 * 1024 * 1024;
+                            break;
+                        case 'TB':
+                            bytes = value * 1024 * 1024 * 1024 * 1024;
+                            break;
+                        default:
+                            return;
+                    }
+                    
+                    // 更新其他输入框的值
+                    updateAllFields(bytes);
+                });
+            });
+            
+            function updateAllFields(bytes) {
+                // 防止递归触发事件
+                const activeElement = document.activeElement;
+                
+                // 计算各个单位的值
+                const bit = bytes * 8;
+                const kb = bytes / 1024;
+                const mb = bytes / (1024 * 1024);
+                const gb = bytes / (1024 * 1024 * 1024);
+                const tb = bytes / (1024 * 1024 * 1024 * 1024);
+                
+                // 更新各个输入框，但不触发事件
+                if (activeElement.id !== 'bitTxt') document.getElementById('bitTxt').value = bit.toFixed(8);
+                if (activeElement.id !== 'bytesTxt') document.getElementById('bytesTxt').value = bytes.toFixed(8);
+                if (activeElement.id !== 'kbTxt') document.getElementById('kbTxt').value = kb.toFixed(8);
+                if (activeElement.id !== 'mbTxt') document.getElementById('mbTxt').value = mb.toFixed(8);
+                if (activeElement.id !== 'gbTxt') document.getElementById('gbTxt').value = gb.toFixed(8);
+                if (activeElement.id !== 'tbTxt') document.getElementById('tbTxt').value = tb.toFixed(8);
+            }
+        });
+    </script>
+</body>
+</html>
