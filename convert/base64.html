@@ -6,9 +6,8 @@
     <title>Base64 编码解码器</title>
     <script src="https://cdn.tailwindcss.com"></script>
 	<!--<link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">-->
-	<link href="https://cdn.jsdmirror.com/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">	
+    <link href="https://cdn.jsdmirror.com/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     
-    <!-- 配置Tailwind自定义颜色和字体 -->
     <script>
         tailwind.config = {
             theme: {
@@ -18,9 +17,6 @@
                         secondary: '#10B981',
                         neutral: '#64748B',
                     },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
                 }
             }
         }
@@ -28,11 +24,8 @@
     
     <style type="text/tailwindcss">
         @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
             .transition-custom {
-                transition: all 0.3s ease;
+                transition: all 0.25s ease;
             }
             .card-shadow {
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -40,146 +33,240 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans">
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
+<body class="bg-gray-50 min-h-screen font-sans p-4">
+    <div class="max-w-2xl mx-auto">
         <!-- 页面标题 -->
-        <header class="text-center mb-10">
-            <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-gray-800 mb-2">
-                <i class="fa fa-code text-primary mr-3"></i>Base64 编码解码器
-            </h1>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                一个简单实用的工具，可快速进行Base64编码与解码操作
-            </p>
+        <header class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <i class="fa fa-key text-primary text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Base64 编码解码器</h1>
+            <p class="text-gray-600">轻松进行Base64编码与解码操作</p>
         </header>
         
-        <div class="grid md:grid-cols-2 gap-8">
-            <!-- Base64解码器 -->
-            <div class="bg-white rounded-xl p-6 card-shadow transition-custom hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fa fa-unlock-alt text-primary mr-2"></i>Base64 解码器
-                </h2>
-                
-                <div class="mb-4">
-                    <label for="decode-input" class="block text-sm font-medium text-gray-700 mb-1">
-                        输入Base64编码文本
-                    </label>
-                    <textarea 
-                        id="decode-input" 
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary transition-custom resize-none"
-                        rows="5"
-                        placeholder="粘贴需要解码的Base64文本..."
-                    ></textarea>
-                </div>
-                
-                <button 
-                    id="decode-btn" 
-                    class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-4 rounded-lg transition-custom flex items-center justify-center"
-                >
-                    <i class="fa fa-decode mr-2"></i>Base64 解码
-                </button>
-                
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        解码结果
-                    </label>
-                    <div id="decode-output" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg min-h-[100px] break-words"></div>
-                </div>
+        <!-- 主内容区 -->
+        <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <!-- 输入区域 -->
+            <div class="mb-6">
+                <label for="input-content" class="block text-sm font-medium text-gray-700 mb-2">
+                    输入需要处理的内容
+                </label>
+                <textarea 
+                    id="input-content" 
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary transition-custom resize-none"
+                    rows="4"
+                    placeholder="输入要编码或解码的文本..."
+                ></textarea>
             </div>
             
-            <!-- Base64编码器 -->
-            <div class="bg-white rounded-xl p-6 card-shadow transition-custom hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fa fa-lock text-secondary mr-2"></i>Base64 编码器
-                </h2>
-                
-                <div class="mb-4">
-                    <label for="encode-input" class="block text-sm font-medium text-gray-700 mb-1">
-                        输入需要编码的文本
-                    </label>
-                    <textarea 
-                        id="encode-input" 
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-custom resize-none"
-                        rows="5"
-                        placeholder="粘贴需要编码为Base64的文本..."
-                    ></textarea>
-                </div>
-                
+            <!-- 操作按钮 -->
+            <div class="flex flex-col sm:flex-row gap-3 mb-6">
                 <button 
                     id="encode-btn" 
-                    class="w-full bg-secondary hover:bg-secondary/90 text-white font-medium py-2.5 px-4 rounded-lg transition-custom flex items-center justify-center"
+                    class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-custom flex items-center justify-center"
                 >
-                    <i class="fa fa-encode mr-2"></i>Base64 编码
+                    <i class="fa fa-lock mr-2"></i>Base64 编码
                 </button>
-                
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        编码结果
-                    </label>
-                    <div id="encode-output" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg min-h-[100px] break-words"></div>
+                <button 
+                    id="decode-btn" 
+                    class="flex-1 bg-neutral hover:bg-neutral/90 text-white font-medium py-3 px-4 rounded-lg transition-custom flex items-center justify-center"
+                >
+                    <i class="fa fa-unlock mr-2"></i>Base64 解码
+                </button>
+                <button 
+                    id="clear-btn" 
+                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-lg transition-custom flex items-center justify-center"
+                >
+                    <i class="fa fa-trash mr-2"></i>清空
+                </button>
+            </div>
+            
+            <!-- 结果区域 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    处理结果
+                </label>
+                <div class="flex">
+                    <div id="result-area" class="flex-grow p-3 bg-gray-50 border border-gray-300 rounded-l-lg min-h-[120px] break-all overflow-auto font-mono text-sm"></div>
+                    <div class="flex flex-col border border-l-0 border-gray-300">
+                        <button 
+                            id="copy-result" 
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 transition-custom border-b border-gray-300"
+                            disabled
+                        >
+                            <i class="fa fa-copy"></i>
+                        </button>
+                        <button 
+                            id="swap-btn" 
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 transition-custom"
+                            disabled
+                        >
+                            <i class="fa fa-exchange"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="copy-success" class="mt-1.5 text-xs text-secondary hidden">
+                    <i class="fa fa-check-circle mr-1"></i>已成功复制到剪贴板
+                </div>
+                <div id="decode-error" class="mt-1.5 text-xs text-red-500 hidden">
+                    <i class="fa fa-exclamation-circle mr-1"></i>解码失败，请输入有效的Base64字符串
                 </div>
             </div>
         </div>
         
-        <!-- 页脚信息 -->
-        <footer class="mt-12 text-center text-gray-500 text-sm">
-            <p>© 2025 Base64 编码解码器 | 一个简洁实用的在线工具</p>
-        </footer>
+        <!-- 信息说明 -->
+        <div class="bg-blue-50 border-l-4 border-primary p-4 rounded-r-lg">
+            <h3 class="font-medium text-primary flex items-center">
+                <i class="fa fa-info-circle mr-2"></i>关于Base64
+            </h3>
+            <p class="text-sm text-gray-700 mt-1">
+                Base64是一种基于64个可打印字符来表示二进制数据的编码方式，常用于需要通过文本协议传输二进制数据的场景。
+                本工具可对文本进行Base64编码，也可对Base64编码的字符串进行解码。
+            </p>
+        </div>
     </div>
+    
+    <!-- 页脚 -->
+    <footer class="mt-10 py-4 text-center text-gray-500 text-sm">
+        <p>Base64 编码解码器 © 2025</p>
+    </footer>
 
     <script>
-        // 解码功能
-        document.getElementById('decode-btn').addEventListener('click', function() {
-            const input = document.getElementById('decode-input').value.trim();
-            const output = document.getElementById('decode-output');
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const inputContent = document.getElementById('input-content');
+            const resultArea = document.getElementById('result-area');
+            const encodeBtn = document.getElementById('encode-btn');
+            const decodeBtn = document.getElementById('decode-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const copyResult = document.getElementById('copy-result');
+            const swapBtn = document.getElementById('swap-btn');
+            const copySuccess = document.getElementById('copy-success');
+            const decodeError = document.getElementById('decode-error');
             
-            if (!input) {
-                output.textContent = '请输入需要解码的Base64文本';
-                output.classList.add('text-red-500');
-                return;
+            // 隐藏所有消息
+            function hideAllMessages() {
+                copySuccess.classList.add('hidden');
+                decodeError.classList.add('hidden');
             }
             
-            try {
-                // 移除可能的空白字符
-                const cleanInput = input.replace(/\s/g, '');
-                // 解码Base64
-                const decoded = atob(cleanInput);
-                output.textContent = decoded;
-                output.classList.remove('text-red-500');
-            } catch (e) {
-                output.textContent = '解码失败：无效的Base64格式';
-                output.classList.add('text-red-500');
-            }
-        });
-        
-        // 编码功能
-        document.getElementById('encode-btn').addEventListener('click', function() {
-            const input = document.getElementById('encode-input').value;
-            const output = document.getElementById('encode-output');
-            
-            if (!input) {
-                output.textContent = '请输入需要编码的文本';
-                output.classList.add('text-red-500');
-                return;
+            // 更新按钮状态
+            function updateButtonStates() {
+                const inputHasContent = inputContent.value.trim().length > 0;
+                const resultHasContent = resultArea.textContent.trim().length > 0;
+                
+                encodeBtn.disabled = !inputHasContent;
+                decodeBtn.disabled = !inputHasContent;
+                copyResult.disabled = !resultHasContent;
+                swapBtn.disabled = !resultHasContent;
             }
             
-            try {
-                // 编码为Base64
-                const encoded = btoa(unescape(encodeURIComponent(input)));
-                output.textContent = encoded;
-                output.classList.remove('text-red-500');
-            } catch (e) {
-                output.textContent = '编码失败，请尝试其他文本';
-                output.classList.add('text-red-500');
+            // Base64编码
+            function encodeToBase64() {
+                hideAllMessages();
+                const text = inputContent.value;
+                if (!text) return;
+                
+                try {
+                    // 处理UTF-8字符
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(text);
+                    const base64String = btoa(String.fromCharCode.apply(null, data));
+                    resultArea.textContent = base64String;
+                    updateButtonStates();
+                } catch (error) {
+                    console.error('编码错误:', error);
+                    resultArea.textContent = '编码失败，请重试';
+                }
             }
-        });
-        
-        // 输入时自动移除错误提示样式
-        const inputs = document.querySelectorAll('textarea');
-        inputs.forEach(input => {
-            input.addEventListener('input', function() {
-                const outputId = this.id === 'decode-input' ? 'decode-output' : 'encode-output';
-                document.getElementById(outputId).classList.remove('text-red-500');
+            
+            // Base64解码
+            function decodeFromBase64() {
+                hideAllMessages();
+                const base64String = inputContent.value.trim();
+                if (!base64String) return;
+                
+                try {
+                    // 处理UTF-8字符
+                    const decodedData = atob(base64String);
+                    const decoder = new TextDecoder();
+                    const text = decoder.decode(new Uint8Array([...decodedData].map(char => char.charCodeAt(0))));
+                    resultArea.textContent = text;
+                    updateButtonStates();
+                } catch (error) {
+                    console.error('解码错误:', error);
+                    resultArea.textContent = '';
+                    decodeError.classList.remove('hidden');
+                    updateButtonStates();
+                }
+            }
+            
+            // 清空输入和结果
+            function clearAll() {
+                inputContent.value = '';
+                resultArea.textContent = '';
+                hideAllMessages();
+                updateButtonStates();
+                inputContent.focus();
+            }
+            
+            // 复制结果到剪贴板
+            function copyToClipboard() {
+                const text = resultArea.textContent;
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        // 显示复制成功提示
+                        copySuccess.classList.remove('hidden');
+                        setTimeout(() => {
+                            copySuccess.classList.add('hidden');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        // 备用复制方法
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        
+                        copySuccess.classList.remove('hidden');
+                        setTimeout(() => {
+                            copySuccess.classList.add('hidden');
+                        }, 2000);
+                    });
+                }
+            }
+            
+            // 交换输入和结果
+            function swapContent() {
+                const resultText = resultArea.textContent;
+                if (resultText) {
+                    inputContent.value = resultText;
+                    resultArea.textContent = '';
+                    hideAllMessages();
+                    updateButtonStates();
+                }
+            }
+            
+            // 事件监听
+            encodeBtn.addEventListener('click', encodeToBase64);
+            decodeBtn.addEventListener('click', decodeFromBase64);
+            clearBtn.addEventListener('click', clearAll);
+            copyResult.addEventListener('click', copyToClipboard);
+            swapBtn.addEventListener('click', swapContent);
+            
+            // 输入变化时更新按钮状态
+            inputContent.addEventListener('input', function() {
+                hideAllMessages();
+                updateButtonStates();
             });
+            
+            // 初始化按钮状态
+            updateButtonStates();
+            
+            // 自动聚焦到输入框
+            inputContent.focus();
         });
     </script>
 </body>
