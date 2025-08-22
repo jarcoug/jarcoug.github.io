@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件大小换算工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdmirror.com/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .transition-smooth {
+                transition: all 0.25s ease-in-out;
+            }
+            .card-effect {
+                @apply bg-white rounded-xl shadow-sm hover:shadow transition-smooth;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <!-- 页面标题 -->
+        <header class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <i class="fa fa-file-text-o text-primary text-2xl"></i>
+            </div>
+            <h1 class="text-[clamp(1.5rem,3vw,2.2rem)] font-bold text-gray-800 mb-2">文件大小换算工具</h1>
+            <p class="text-gray-600">轻量级工具，无外部依赖，精准转换文件大小单位</p>
+        </header>
+        
+        <!-- 主内容区 -->
+        <div class="card-effect p-6 mb-6">
+            <!-- 输入区域 -->
+            <div class="mb-6">
+                <label for="size-input" class="block text-sm font-medium text-gray-700 mb-2">
+                    输入文件大小
+                </label>
+                <div class="flex">
+                    <input 
+                        type="number" 
+                        id="size-input" 
+                        class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-primary/50 focus:border-primary transition-smooth"
+                        placeholder="例如：1、2.5、1024"
+                        min="0"
+                        step="any"
+                        value="1"
+                    >
+                    <select 
+                        id="from-unit" 
+                        class="p-3 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-smooth"
+                    >
+                        <option value="B">字节 (B)</option>
+                        <option value="KB">千字节 (KB)</option>
+                        <option value="MB" selected>兆字节 (MB)</option>
+                        <option value="GB">千兆字节 (GB)</option>
+                        <option value="TB">太字节 (TB)</option>
+                        <option value="PB">拍字节 (PB)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 转换按钮 -->
+            <button 
+                id="convert-btn" 
+                class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-smooth flex items-center justify-center mb-6"
+            >
+                <i class="fa fa-refresh mr-2"></i>执行换算
+            </button>
+            
+            <!-- 转换结果 -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-3">换算结果</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- 字节 -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-smooth">
+                        <div class="text-xs text-gray-500 mb-1">字节 (B)</div>
+                        <div id="result-B" class="font-medium text-gray-800">-</div>
+                    </div>
+                    <!-- 千字节 -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-smooth">
+                        <div class="text-xs text-gray-500 mb-1">千字节 (KB)</div>
+                        <div id="result-KB" class="font-medium text-gray-800">-</div>
+                    </div>
+                    <!-- 兆字节 -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-smooth">
+                        <div class="text-xs text-gray-500 mb-1">兆字节 (MB)</div>
+                        <div id="result-MB" class="font-medium text-gray-800">-</div>
+                    </div>
+                    <!-- 千兆字节 -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-smooth">
+                        <div class="text-xs text-gray-500 mb-1">千兆字节 (GB)</div>
+                        <div id="result-GB" class="font-medium text-gray-800">-</div>
+                    </div>
+                    <!-- 太字节 -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-smooth">
+                        <div class="text-xs text-gray-500 mb-1">太字节 (TB)</div>
+                        <div id="result-TB" class="font-medium text-gray-800">-</div>
+                    </div>
+                    <!-- 拍字节 -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition-smooth">
+                        <div class="text-xs text-gray-500 mb-1">拍字节 (PB)</div>
+                        <div id="result-PB" class="font-medium text-gray-800">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 常用示例 -->
+        <div class="card-effect p-6 mb-6">
+            <h3 class="text-sm font-medium text-gray-700 mb-3">常用换算示例</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button class="sample-btn bg-gray-50 hover:bg-gray-100 p-2 rounded border border-gray-200 text-sm transition-smooth" 
+                        data-size="1" data-unit="GB">1 GB</button>
+                <button class="sample-btn bg-gray-50 hover:bg-gray-100 p-2 rounded border border-gray-200 text-sm transition-smooth" 
+                        data-size="1024" data-unit="MB">1024 MB</button>
+                <button class="sample-btn bg-gray-50 hover:bg-gray-100 p-2 rounded border border-gray-200 text-sm transition-smooth" 
+                        data-size="512" data-unit="KB">512 KB</button>
+                <button class="sample-btn bg-gray-50 hover:bg-gray-100 p-2 rounded border border-gray-200 text-sm transition-smooth" 
+                        data-size="2" data-unit="TB">2 TB</button>
+            </div>
+        </div>
+        
+        <!-- 转换说明 -->
+        <div class="bg-blue-50 border-l-4 border-primary p-4 rounded-r-lg">
+            <h3 class="font-medium text-primary flex items-center">
+                <i class="fa fa-info-circle mr-2"></i>关于单位转换
+            </h3>
+            <p class="text-sm text-gray-700 mt-1">
+                本工具采用二进制标准进行转换（1 KB = 1024 B），适用于计算机存储和文件大小换算。
+                所有转换均通过自定义算法实现，不依赖任何外部库，确保轻量高效。
+            </p>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="mt-10 py-4 text-center text-gray-500 text-sm">
+        <p>文件大小换算工具 © 2025 | 自定义算法实现</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM元素引用
+            const sizeInput = document.getElementById('size-input');
+            const fromUnit = document.getElementById('from-unit');
+            const convertBtn = document.getElementById('convert-btn');
+            const sampleBtns = document.querySelectorAll('.sample-btn');
+            
+            // 单位转换因子配置 (二进制标准: 1024进制)
+            const units = {
+                'B': 1,
+                'KB': 1024,
+                'MB': 1024 * 1024,
+                'GB': 1024 * 1024 * 1024,
+                'TB': 1024 * 1024 * 1024 * 1024,
+                'PB': 1024 * 1024 * 1024 * 1024 * 1024
+            };
+            
+            // 所有需要转换的目标单位
+            const targetUnitList = Object.keys(units);
+            
+            // 自定义转换算法
+            function convertFileSize() {
+                // 获取输入值并验证
+                const sizeValue = parseFloat(sizeInput.value);
+                if (isNaN(sizeValue) || sizeValue < 0) {
+                    alert('请输入有效的非负数值');
+                    return;
+                }
+                
+                const inputUnit = fromUnit.value;
+                
+                // 先将输入值转换为字节（基础单位）
+                const bytes = sizeValue * units[inputUnit];
+                
+                // 计算并显示每个目标单位的结果
+                targetUnitList.forEach(unit => {
+                    const convertedValue = bytes / units[unit];
+                    
+                    // 根据单位和数值大小动态调整精度
+                    let decimalPlaces = 2;
+                    if (unit === 'B') {
+                        decimalPlaces = 0; // 字节显示为整数
+                    } else if (convertedValue < 0.001) {
+                        decimalPlaces = 6; // 极小值显示更多小数位
+                    } else if (convertedValue < 1) {
+                        decimalPlaces = 4; // 小于1的值显示4位小数
+                    }
+                    
+                    // 格式化并显示结果
+                    const formattedValue = convertedValue.toFixed(decimalPlaces);
+                    document.getElementById(`result-${unit}`).textContent = formattedValue;
+                });
+            }
+            
+            // 绑定事件监听器
+            convertBtn.addEventListener('click', convertFileSize);
+            
+            // 输入框回车事件
+            sizeInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    convertFileSize();
+                }
+            });
+            
+            // 示例按钮点击事件
+            sampleBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    sizeInput.value = this.getAttribute('data-size');
+                    fromUnit.value = this.getAttribute('data-unit');
+                    convertFileSize();
+                });
+            });
+            
+            // 初始化页面时执行一次转换
+            convertFileSize();
+        });
+    </script>
+</body>
+</html>
