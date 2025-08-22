@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD5加密工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdmirror.com/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入成熟的CryptoJS库 -->
+    <script src="https://cdn.jsdmirror.com/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .transition-all-300 {
+                transition: all 300ms ease;
+            }
+            .card-hover {
+                @apply hover:shadow-lg hover:-translate-y-1 transition-all-300;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <!-- 页面标题 -->
+        <header class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
+                <i class="fa fa-shield text-primary text-2xl"></i>
+            </div>
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800 mb-2">MD5加密工具</h1>
+            <p class="text-gray-600">基于CryptoJS库，支持16位和32位加密</p>
+        </header>
+        
+        <!-- 主内容区 -->
+        <div class="bg-white rounded-xl shadow p-6 card-hover mb-6">
+            <!-- 输入区域 -->
+            <div class="mb-5">
+                <label for="input-content" class="block text-sm font-medium text-gray-700 mb-1.5">
+                    请输入需要加密的内容
+                </label>
+                <textarea 
+                    id="input-content" 
+                    class="w-full p-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all-300 resize-none"
+                    rows="4"
+                    placeholder="输入任意文本，支持特殊字符和中文..."
+                ></textarea>
+                <p class="text-xs text-gray-500 mt-1.5">提示：按Enter键直接加密，Shift+Enter可换行</p>
+            </div>
+            
+            <!-- 加密选项 -->
+            <div class="mb-5">
+                <div class="flex items-center space-x-6">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="md5-format" value="32" checked
+                            class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+                        <span class="ml-2 text-gray-700">32位加密</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="md5-format" value="16"
+                            class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+                        <span class="ml-2 text-gray-700">16位加密</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 加密按钮 -->
+            <button 
+                id="encrypt-btn" 
+                class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all-300 flex items-center justify-center mb-5"
+            >
+                <i class="fa fa-key mr-2"></i>执行MD5加密
+            </button>
+            
+            <!-- 结果区域 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    加密结果
+                </label>
+                <div class="flex">
+                    <div id="result-area" class="flex-grow p-3.5 bg-gray-50 border border-gray-300 rounded-l-lg min-h-[60px] break-all overflow-x-auto font-mono text-sm"></div>
+                    <button 
+                        id="copy-btn" 
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3.5 rounded-r-lg border border-l-0 border-gray-300 transition-all-300"
+                        disabled
+                    >
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
+                <div id="success-message" class="hidden mt-1.5 text-xs text-green-600">
+                    <i class="fa fa-check-circle mr-1"></i>已成功复制到剪贴板
+                </div>
+                <div id="error-message" class="hidden mt-1.5 text-xs text-red-600">
+                    <i class="fa fa-exclamation-circle mr-1"></i>请输入需要加密的内容
+                </div>
+            </div>
+        </div>
+        
+        <!-- 信息提示 -->
+        <div class="bg-blue-50 border-l-4 border-primary p-4 rounded-r-lg">
+            <h3 class="font-medium text-primary flex items-center">
+                <i class="fa fa-info-circle mr-2"></i>关于本工具
+            </h3>
+            <p class="text-sm text-gray-700 mt-1">
+                本工具使用成熟的CryptoJS加密库实现MD5加密功能，确保加密结果的准确性和稳定性。
+                支持各种特殊字符、中文和复杂字符串的加密处理。
+            </p>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="mt-10 py-4 text-center text-gray-500 text-sm">
+        <p>© 2025 MD5加密工具 | 基于CryptoJS库构建</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const inputContent = document.getElementById('input-content');
+            const encryptBtn = document.getElementById('encrypt-btn');
+            const resultArea = document.getElementById('result-area');
+            const copyBtn = document.getElementById('copy-btn');
+            const successMessage = document.getElementById('success-message');
+            const errorMessage = document.getElementById('error-message');
+            const radioButtons = document.querySelectorAll('input[name="md5-format"]');
+            
+            // 隐藏所有消息
+            function hideAllMessages() {
+                successMessage.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+            }
+            
+            // 执行加密
+            function encryptContent() {
+                const content = inputContent.value.trim();
+                
+                // 验证输入
+                if (!content) {
+                    resultArea.textContent = '';
+                    copyBtn.disabled = true;
+                    errorMessage.classList.remove('hidden');
+                    successMessage.classList.add('hidden');
+                    return;
+                }
+                
+                try {
+                    // 使用成熟的CryptoJS库进行MD5加密
+                    const md5Hash = CryptoJS.MD5(content).toString();
+                    
+                    // 根据选择返回16位或32位结果
+                    const is16Bit = document.querySelector('input[name="md5-format"][value="16"]').checked;
+                    const result = is16Bit ? md5Hash.substr(8, 16) : md5Hash;
+                    
+                    // 显示结果
+                    resultArea.textContent = result;
+                    copyBtn.disabled = false;
+                    hideAllMessages();
+                } catch (error) {
+                    console.error('加密过程出错:', error);
+                    resultArea.textContent = '加密失败，请重试';
+                    resultArea.classList.add('text-red-500');
+                    copyBtn.disabled = true;
+                    hideAllMessages();
+                }
+            }
+            
+            // 加密按钮点击事件
+            encryptBtn.addEventListener('click', encryptContent);
+            
+            // 输入框按键事件 - Enter加密，Shift+Enter换行
+            inputContent.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    encryptContent();
+                }
+            });
+            
+            // 复制结果到剪贴板
+            copyBtn.addEventListener('click', function() {
+                const result = resultArea.textContent;
+                if (result) {
+                    navigator.clipboard.writeText(result).then(() => {
+                        // 显示复制成功提示
+                        successMessage.classList.remove('hidden');
+                        setTimeout(() => {
+                            successMessage.classList.add('hidden');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动复制');
+                    });
+                }
+            });
+            
+            // 加密格式切换时重新加密
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (inputContent.value.trim()) {
+                        encryptContent();
+                    }
+                });
+            });
+            
+            // 输入内容变化时隐藏消息
+            inputContent.addEventListener('input', hideAllMessages);
+        });
+    </script>
+</body>
+</html>
