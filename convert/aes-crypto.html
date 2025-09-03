@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES加解密工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!--<link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">-->
+	<link href="https://cdn.jsdmirror.com/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .transition-all-300 {
+                transition: all 300ms ease-in-out;
+            }
+            .key-strength-weak {
+                background-color: #ef4444;
+            }
+            .key-strength-medium {
+                background-color: #f59e0b;
+            }
+            .key-strength-strong {
+                background-color: #10b981;
+            }
+            .length-option-active {
+                background-color: #3B82F6;
+                color: white;
+                border-color: #3B82F6;
+            }
+            .copy-success {
+                color: #10B981 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- 标题区域 -->
+        <header class="text-center mb-8">
+            <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-gray-800 mb-2">
+                <i class="fa fa-shield text-primary mr-3"></i>AES加解密工具
+            </h1>
+            <p class="text-gray-600">支持自定义密钥长度的AES加解密实现</p>
+        </header>
+
+        <!-- 密钥设置区域 -->
+        <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <h2 class="text-lg font-semibold mb-4 text-accent flex items-center">
+                <i class="fa fa-key mr-2"></i>密钥设置
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- 密钥长度选择 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        密钥长度 (对应AES加密强度)
+                    </label>
+                    <div class="flex gap-3">
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg transition-all-300 hover:border-primary" data-length="16">
+                            16位 (AES-128)
+                        </button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg transition-all-300 hover:border-primary" data-length="24">
+                            24位 (AES-192)
+                        </button>
+                        <button class="length-option-active px-4 py-2 border rounded-lg transition-all-300" data-length="32">
+                            32位 (AES-256)
+                        </button>
+                    </div>
+                    <input type="hidden" id="keyLength" value="32">
+                </div>
+                
+                <!-- 密钥输入 -->
+                <div>
+                    <label for="secretKey" class="block text-sm font-medium text-gray-700 mb-1">
+                        加密密钥 (大小写混合)
+                    </label>
+                    <div class="flex">
+                        <input type="text" id="secretKey" class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-accent focus:border-accent transition-all-300" 
+                               placeholder="请输入加密密钥">
+                        <button id="generateKeyBtn" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 border border-gray-300 border-l-0 rounded-r-lg transition-all-300">
+                            <i class="fa fa-refresh"></i> 生成密钥
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 密钥强度指示器 -->
+                <div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>密钥强度</span>
+                        <span id="keyLengthDisplay">长度: 32位 (预期: 32位)</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="keyStrengthIndicator" class="h-full key-strength-strong transition-all-300" style="width: 100%"></div>
+                    </div>
+                    <p id="keyStrengthText" class="text-xs text-gray-600 mt-1">强 - 适合AES-256加密</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- 加密区域 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-all-300">
+                <h2 class="text-xl font-semibold mb-4 text-primary flex items-center">
+                    <i class="fa fa-lock mr-2"></i>加密操作
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="encryptInput" class="block text-sm font-medium text-gray-700 mb-1">
+                            待加密内容
+                        </label>
+                        <textarea id="encryptInput" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300" placeholder="请输入需要加密的文本或JSON..."></textarea>
+                    </div>
+                    
+                    <div class="pt-2">
+                        <button id="encryptBtn" class="w-full bg-primary hover:bg-primary/90 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center transition-all-300">
+                            <i class="fa fa-arrow-right mr-2"></i>执行加密
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            加密结果
+                        </label>
+                        <textarea id="encryptResult" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" readonly placeholder="加密后的内容将显示在这里..."></textarea>
+                        <button id="copyEncryptBtn" class="mt-1 text-sm text-primary hover:text-primary/80 flex items-center transition-all-300">
+                            <i class="fa fa-copy mr-1"></i>
+                            <span>复制加密结果</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 解密区域 -->
+            <div class="bg-white rounded-xl p-6 card-shadow hover:shadow-lg transition-all-300">
+                <h2 class="text-xl font-semibold mb-4 text-secondary flex items-center">
+                    <i class="fa fa-unlock mr-2"></i>解密操作
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="decryptInput" class="block text-sm font-medium text-gray-700 mb-1">
+                            待解密内容
+                        </label>
+                        <textarea id="decryptInput" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-all-300" placeholder="请输入需要解密的字符串..."></textarea>
+                    </div>
+                    
+                    <div class="pt-2">
+                        <button id="decryptBtn" class="w-full bg-secondary hover:bg-secondary/90 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center transition-all-300">
+                            <i class="fa fa-arrow-right mr-2"></i>执行解密
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            解密结果
+                        </label>
+                        <textarea id="decryptResult" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50" readonly placeholder="解密后的内容将显示在这里..."></textarea>
+                        <button id="copyDecryptBtn" class="mt-1 text-sm text-secondary hover:text-secondary/80 flex items-center transition-all-300">
+                            <i class="fa fa-copy mr-1"></i>
+                            <span>复制解密结果</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 状态提示 -->
+        <div id="status" class="fixed bottom-6 right-6 p-4 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all-300 flex items-center max-w-xs z-10">
+            <i id="statusIcon" class="mr-2 text-xl"></i>
+            <span id="statusText"></span>
+        </div>
+    </div>
+
+    <script>
+        // 固定初始密钥
+        const INITIAL_KEY = 'qMNzkRpYiNYyMAY9Z4u7c1xE68GYJkr9';
+        // 标记是否是首次加载
+        let isInitialLoad = true;
+        
+        // DOM元素
+        const lengthOptions = document.querySelectorAll('[data-length]');
+        const keyLengthInput = document.getElementById('keyLength');
+        const secretKeyEl = document.getElementById('secretKey');
+        const generateKeyBtn = document.getElementById('generateKeyBtn');
+        const keyLengthDisplay = document.getElementById('keyLengthDisplay');
+        const keyStrengthIndicator = document.getElementById('keyStrengthIndicator');
+        const keyStrengthText = document.getElementById('keyStrengthText');
+        const encryptInput = document.getElementById('encryptInput');
+        const encryptResult = document.getElementById('encryptResult');
+        const decryptInput = document.getElementById('decryptInput');
+        const decryptResult = document.getElementById('decryptResult');
+        const encryptBtn = document.getElementById('encryptBtn');
+        const decryptBtn = document.getElementById('decryptBtn');
+        const copyEncryptBtn = document.getElementById('copyEncryptBtn');
+        const copyDecryptBtn = document.getElementById('copyDecryptBtn');
+        const status = document.getElementById('status');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        
+        // 显示状态提示
+        function showStatus(message, isError = false) {
+            statusText.textContent = message;
+            statusIcon.className = isError 
+                ? 'fa fa-exclamation-circle text-red-500' 
+                : 'fa fa-check-circle text-green-500';
+            status.className = `fixed bottom-6 right-6 p-4 rounded-lg shadow-lg transform translate-y-0 opacity-100 transition-all-300 flex items-center max-w-xs z-10 ${
+                isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
+            }`;
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                status.className = 'fixed bottom-6 right-6 p-4 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all-300 flex items-center max-w-xs z-10';
+            }, 3000);
+        }
+        
+        // 复制到剪贴板
+        function copyToClipboard(text, successMsg, button) {
+            // 保存原始按钮文本和图标
+            const originalIcon = button.querySelector('i').className;
+            const originalText = button.querySelector('span').textContent;
+            
+            // 尝试使用Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(() => handleCopySuccess(successMsg, button, originalIcon, originalText))
+                    .catch(err => {
+                        console.error('Clipboard API 失败:', err);
+                        fallbackCopy(text, successMsg, button, originalIcon, originalText);
+                    });
+            } else {
+                // 不支持Clipboard API时使用备选方案
+                fallbackCopy(text, successMsg, button, originalIcon, originalText);
+            }
+        }
+        
+        // 备选复制方案 - 创建临时文本框
+        function fallbackCopy(text, successMsg, button, originalIcon, originalText) {
+            try {
+                // 创建临时文本区域
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed'; // 确保不在可视区域
+                document.body.appendChild(textarea);
+                
+                // 选择并复制文本
+                textarea.select();
+                textarea.setSelectionRange(0, text.length); // 移动设备兼容
+                const successful = document.execCommand('copy');
+                
+                document.body.removeChild(textarea); // 清理
+                
+                if (successful) {
+                    handleCopySuccess(successMsg, button, originalIcon, originalText);
+                } else {
+                    throw new Error('无法执行复制命令');
+                }
+            } catch (err) {
+                console.error('备选复制方法失败:', err);
+                showStatus('复制失败，请手动复制', true);
+                // 恢复按钮状态
+                resetCopyButton(button, originalIcon, originalText);
+            }
+        }
+        
+        // 处理复制成功
+        function handleCopySuccess(message, button, originalIcon, originalText) {
+            // 显示成功状态
+            showStatus(message);
+            
+            // 更新按钮显示
+            button.querySelector('i').className = 'fa fa-check mr-1';
+            button.querySelector('span').textContent = '已复制';
+            button.classList.add('copy-success');
+            
+            // 2秒后恢复原始状态
+            setTimeout(() => {
+                resetCopyButton(button, originalIcon, originalText);
+            }, 2000);
+        }
+        
+        // 重置复制按钮状态
+        function resetCopyButton(button, originalIcon, originalText) {
+            button.querySelector('i').className = originalIcon;
+            button.querySelector('span').textContent = originalText;
+            button.classList.remove('copy-success');
+        }
+        
+        // 更新密钥长度选择状态
+        function updateLengthSelection(selectedLength) {
+            lengthOptions.forEach(option => {
+                if (option.dataset.length === selectedLength) {
+                    option.classList.add('length-option-active');
+                    option.classList.remove('border-gray-300', 'hover:border-primary');
+                } else {
+                    option.classList.remove('length-option-active');
+                    option.classList.add('border-gray-300', 'hover:border-primary');
+                }
+            });
+            
+            keyLengthInput.value = selectedLength;
+            
+            // 初始化后，切换长度时自动生成密钥
+            if (!isInitialLoad) {
+                generateKeyBtn.click();
+            }
+            
+            updateKeyStrength();
+        }
+        
+        // 更新密钥强度指示器
+        function updateKeyStrength() {
+            const key = secretKeyEl.value;
+            const length = parseInt(keyLengthInput.value);
+            const keyLength = key.length;
+            
+            // 更新长度显示
+            keyLengthDisplay.textContent = `长度: ${keyLength}位 (预期: ${length}位)`;
+            
+            // 评估密钥强度
+            let strength = 0;
+            let strengthClass = 'key-strength-weak';
+            let strengthText = '弱 - 密钥长度不足';
+            
+            // 根据选择的长度评估强度
+            if (keyLength === length) {
+                // 检查是否包含大小写字母
+                const hasUpper = /[A-Z]/.test(key);
+                const hasLower = /[a-z]/.test(key);
+                
+                if (length === 16) {
+                    strength = hasUpper && hasLower ? 70 : 60;
+                    strengthClass = 'key-strength-medium';
+                    strengthText = hasUpper && hasLower 
+                        ? '良好 - 包含大小写字母，适合AES-128加密' 
+                        : '中 - 适合AES-128加密';
+                } else if (length === 24) {
+                    strength = hasUpper && hasLower ? 90 : 80;
+                    strengthClass = 'key-strength-medium';
+                    strengthText = hasUpper && hasLower 
+                        ? '优秀 - 包含大小写字母，适合AES-192加密' 
+                        : '良好 - 适合AES-192加密';
+                } else if (length === 32) {
+                    strength = hasUpper && hasLower ? 100 : 90;
+                    strengthClass = 'key-strength-strong';
+                    strengthText = hasUpper && hasLower 
+                        ? '强 - 包含大小写字母，适合AES-256加密' 
+                        : '强 - 适合AES-256加密';
+                }
+            } else if (keyLength > 0) {
+                strength = Math.min(50, (keyLength / length) * 100);
+                strengthText = `不匹配 - 请输入${length}位密钥`;
+            }
+            
+            // 更新UI
+            keyStrengthIndicator.className = `h-full transition-all-300 ${strengthClass}`;
+            keyStrengthIndicator.style.width = `${strength}%`;
+            keyStrengthText.textContent = strengthText;
+        }
+        
+        // 生成指定长度的随机密钥 - 支持大小写混合模式
+        function generateRandomKey() {
+            const length = parseInt(keyLengthInput.value);
+            // 生成随机字节并转换为字符串
+            let key = CryptoJS.lib.WordArray.random(length / 2).toString();
+            
+            // 处理大小写混合 - 随机将部分字符转为大写
+            let mixedCaseKey = '';
+            for (let i = 0; i < key.length; i++) {
+                // 50%概率将字符转为大写
+                if (Math.random() > 0.5) {
+                    mixedCaseKey += key[i].toUpperCase();
+                } else {
+                    mixedCaseKey += key[i].toLowerCase();
+                }
+            }
+            
+            secretKeyEl.value = mixedCaseKey;
+            updateKeyStrength();
+            showStatus(`已生成${length}位随机密钥 (AES-${length*8})，包含大小写字母`);
+        }
+        
+        // 加密函数
+        function encrypt(data, key) {
+            try {
+                if (!key) {
+                    throw new Error('请输入加密密钥');
+                }
+                
+                const length = parseInt(keyLengthInput.value);
+                if (key.length !== length) {
+                    throw new Error(`密钥长度必须为${length}位`);
+                }
+                
+                // 确保数据是字符串，如果是对象则转换为JSON
+                const plaintext = typeof data === 'object' ? JSON.stringify(data) : String(data);
+                
+                // 使用CryptoJS进行AES加密
+                const encrypted = CryptoJS.AES.encrypt(plaintext, key);
+                
+                // 返回加密后的字符串
+                return encrypted.toString();
+            } catch (error) {
+                showStatus(`加密失败: ${error.message}`, true);
+                console.error('加密错误:', error);
+                return null;
+            }
+        }
+        
+        // 解密函数
+        function decrypt(ciphertext, key) {
+            try {
+                if (!key) {
+                    throw new Error('请输入解密密钥');
+                }
+                
+                const length = parseInt(keyLengthInput.value);
+                if (key.length !== length) {
+                    throw new Error(`密钥长度必须为${length}位`);
+                }
+                
+                // 使用CryptoJS进行AES解密
+                const decrypted = CryptoJS.AES.decrypt(ciphertext, key);
+                
+                // 将解密结果转换为UTF-8字符串
+                const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+                
+                if (!plaintext) {
+                    throw new Error('解密结果为空，可能是无效的密文或密钥不匹配');
+                }
+                
+                // 尝试解析为JSON对象，如果失败则返回原始字符串
+                try {
+                    return {
+                        data: JSON.parse(plaintext),
+                        isJson: true
+                    };
+                } catch (e) {
+                    return {
+                        data: plaintext,
+                        isJson: false
+                    };
+                }
+            } catch (error) {
+                showStatus(`解密失败: ${error.message}`, true);
+                console.error('解密错误:', error);
+                return null;
+            }
+        }
+        
+        // 事件监听 - 密钥长度选择
+        lengthOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                updateLengthSelection(option.dataset.length);
+            });
+        });
+        
+        // 加密按钮点击事件
+        encryptBtn.addEventListener('click', () => {
+            const input = encryptInput.value.trim();
+            const key = secretKeyEl.value.trim();
+            
+            if (!input) {
+                showStatus('请输入需要加密的内容', true);
+                encryptInput.focus();
+                return;
+            }
+            
+            // 尝试解析输入为JSON对象
+            let dataToEncrypt = input;
+            try {
+                dataToEncrypt = JSON.parse(input);
+            } catch (e) {
+                // 不是JSON，直接使用字符串
+            }
+            
+            const encrypted = encrypt(dataToEncrypt, key);
+            if (encrypted) {
+                encryptResult.value = encrypted;
+                decryptInput.value = encrypted;
+                showStatus('加密成功');
+            }
+        });
+        
+        // 解密按钮点击事件
+        decryptBtn.addEventListener('click', () => {
+            const input = decryptInput.value.trim();
+            const key = secretKeyEl.value.trim();
+            
+            if (!input) {
+                showStatus('请输入需要解密的内容', true);
+                decryptInput.focus();
+                return;
+            }
+            
+            const decrypted = decrypt(input, key);
+            if (decrypted) {
+                // 如果是JSON，格式化显示
+                decryptResult.value = decrypted.isJson 
+                    ? JSON.stringify(decrypted.data, null, 2) 
+                    : decrypted.data;
+                showStatus('解密成功');
+            }
+        });
+        
+        // 复制加密结果
+        copyEncryptBtn.addEventListener('click', () => {
+            const text = encryptResult.value.trim();
+            if (text) {
+                copyToClipboard(text, '加密结果已复制', copyEncryptBtn);
+            } else {
+                showStatus('没有可复制的加密结果', true);
+            }
+        });
+        
+        // 复制解密结果
+        copyDecryptBtn.addEventListener('click', () => {
+            const text = decryptResult.value.trim();
+            if (text) {
+                copyToClipboard(text, '解密结果已复制', copyDecryptBtn);
+            } else {
+                showStatus('没有可复制的解密结果', true);
+            }
+        });
+        
+        // 生成密钥按钮点击事件
+        generateKeyBtn.addEventListener('click', generateRandomKey);
+        
+        // 监听密钥输入变化，更新强度指示器
+        secretKeyEl.addEventListener('input', updateKeyStrength);
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 设置固定初始密钥
+            secretKeyEl.value = INITIAL_KEY;
+            
+            // 设置32位为选中状态
+            updateLengthSelection('32');
+            
+            // 填充示例JSON数据
+            encryptInput.value = JSON.stringify({
+                bGlobal: true,
+                timestamp: new Date().getTime(),
+                message: "这是一个测试消息"
+            }, null, 2);
+            
+            // 更新密钥强度显示
+            updateKeyStrength();
+            
+            // 标记初始化完成
+            setTimeout(() => {
+                isInitialLoad = false;
+            }, 100);
+        });
+    </script>
+</body>
+</html>
