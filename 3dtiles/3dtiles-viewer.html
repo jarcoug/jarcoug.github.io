@@ -1,1 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Tiles 数据预览器</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.112/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.112/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 400px;
+            max-width: 450px;
+            z-index: 1000;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .control-panel h2 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-load {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background-color: #45a049;
+        }
+
+        .btn-clear {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background-color: #da190b;
+        }
+
+        .btn-example {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-example:hover {
+            background-color: #0b7dda;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .tips {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #e8f5e9;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #2e7d32;
+        }
+
+        .tips strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #1b5e20;
+        }
+
+        .tips ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        .tips li {
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin-top: 8px;
+            overflow-x: auto;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 8px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab.active {
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .instruction-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .instruction-box h4 {
+            margin: 0 0 8px 0;
+            color: #856404;
+            font-size: 13px;
+        }
+
+        .instruction-box ol {
+            margin-left: 20px;
+            font-size: 12px;
+            color: #856404;
+        }
+
+        .instruction-box li {
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        /* 数据项样式 */
+        .data-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-item-info {
+            flex: 1;
+            font-size: 12px;
+            color: #495057;
+            word-break: break-all;
+        }
+
+        .data-item-name {
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+
+        .data-item-url {
+            color: #6c757d;
+            font-size: 11px;
+        }
+
+        .btn-remove {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .btn-remove:hover {
+            background-color: #c82333;
+        }
+
+        /* 示例数据checkbox样式 */
+        .example-item {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-item:hover {
+            background: #f8f9fa;
+            border-color: #4CAF50;
+        }
+
+        .example-item.selected {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+
+        .example-item input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .example-item label {
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            margin: 0;
+        }
+
+        .example-details {
+            flex: 1;
+        }
+
+        .example-title {
+            font-weight: 600;
+            color: #212529;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .example-desc {
+            font-size: 11px;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+
+<div class="control-panel">
+    <h2>🌍 3D Tiles 数据预览器</h2>
+
+    <div class="tab-group">
+        <button class="tab active" data-tab="url">在线/本地URL</button>
+        <button class="tab" data-tab="example">示例数据</button>
+    </div>
+
+    <!-- URL加载 -->
+    <div class="tab-content active" id="url-content">
+        <div class="input-group">
+            <label>📡 数据地址（在线URL 或 本地服务器）：</label>
+            <input type="text" id="urlInput" placeholder="https://pelican-public.s3.amazonaws.com/3dtiles/agi-hq/tileset.json" value="https://pelican-public.s3.amazonaws.com/3dtiles/agi-hq/tileset.json">
+        </div>
+        <div class="button-group">
+            <button class="btn-load" id="loadUrlBtn">加载数据</button>
+            <button class="btn-example" id="addUrlBtn">➕ 添加地址</button>
+        </div>
+
+        <!-- 已加载的数据列表 -->
+        <div id="loadedUrlsList" style="margin-top: 15px;"></div>
+
+        <div class="instruction-box">
+            <h4>💡 如何加载本地3D Tiles数据：</h4>
+            <ol>
+                <li><strong>启动本地HTTP服务器</strong>（在数据文件夹中）：
+                    <div class="code-block">
+                        # Python 3<br>
+                        python -m http.server 8080<br><br>
+                        # 或 Python 2<br>
+                        python -m SimpleHTTPServer 8080<br><br>
+                        # 或 Node.js<br>
+                        npx http-server -p 8080 --cors
+                    </div>
+                </li>
+                <li><strong>输入本地地址</strong>：<br>
+                    如果tileset.json在服务器根目录：<br>
+                    <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;">http://localhost:8080/tileset.json</code><br><br>
+                    如果在子文件夹中：<br>
+                    <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;">http://localhost:8080/folder/tileset.json</code>
+                </li>
+                <li><strong>点击"加载"</strong>按钮</li>
+            </ol>
+        </div>
+
+        <div class="tips">
+            <strong>✅ 支持的数据源：</strong>
+            <ul>
+                <li><strong>在线URL：</strong> https://example.com/tileset.json</li>
+                <li><strong>本地服务器：</strong> http://localhost:8080/tileset.json</li>
+                <li><strong>局域网：</strong> http://192.168.1.100:8080/tileset.json</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 示例数据 -->
+    <div class="tab-content" id="example-content">
+        <div class="input-group">
+            <label>🏙️ 示例数据集（勾选即显示，取消即隐藏）：</label>
+            <div id="exampleList" style="margin-top: 10px;">
+                <!-- 示例数据将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 清除按钮 -->
+    <div class="button-group">
+        <button class="btn-clear" id="clearBtn">清除数据</button>
+    </div>
+
+    <div class="status" id="status"></div>
+</div>
+
+<script>
+    // Cesium token
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5N2UyMjcwOS00MDY1LTQxYjEtYjZjMy00YTU0ZTg5MmViYWQiLCJpZCI6ODAzMDYsImlhdCI6MTY0Mjc0ODI2MX0.dkwAL1CcljUV7NA7fDbhXXnmyZQU_c-G5zRx8PtEcxE';
+
+    let viewer = null;
+    let loadedTilesets = []; // 存储所有已加载的tileset对象
+    let viewerReady = false;
+    let loadingTilesets = new Map(); // 跟踪正在加载的tileset，防止重复加载
+    let checkboxDebounceTimers = {}; // 防抖定时器
+
+    // 示例数据集配置
+    const EXAMPLE_DATA = [
+        {
+            id: 'agi-hq',
+            name: 'agi-hq',
+            url: 'https://pelican-public.s3.amazonaws.com/3dtiles/agi-hq/tileset.json',
+            description: 'agi-hq'
+        },
+        {
+            id: 'MetadataGranularities',
+            name: 'MetadataGranularities',
+            url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.1/MetadataGranularities/tileset.json',
+            description: 'MetadataGranularities'
+        },
+        {
+            id: 'TilesetWithTreeBillboards',
+            name: 'TilesetWithTreeBillboards',
+            url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithTreeBillboards/tileset.json',
+            description: 'TilesetWithTreeBillboards'
+        },
+        {
+            id: 'TilesetWithDiscreteLOD',
+            name: 'TilesetWithDiscreteLOD',
+            url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithDiscreteLOD/tileset.json',
+            description: 'TilesetWithDiscreteLOD'
+        },
+        {
+            id: 'TilesetWithRequestVolume',
+            name: 'TilesetWithRequestVolume',
+            url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithRequestVolume/tileset.json',
+            description: 'TilesetWithRequestVolume'
+        }
+    ];
+
+    // 初始化Cesium Viewer
+    function initViewer() {
+        try {
+            viewer = new Cesium.Viewer('cesiumContainer', {
+                animation: false,
+                timeline: false,
+                baseLayerPicker: true,
+                geocoder: true,
+                homeButton: true,
+                sceneModePicker: true,
+                navigationHelpButton: true,
+                fullscreenButton: true,
+                vrButton: false
+            });
+
+            viewer.scene.globe.depthTestAgainstTerrain = true;
+            viewerReady = true;
+            console.log('Cesium Viewer 初始化完成');
+        } catch (error) {
+            console.error('Viewer初始化错误:', error);
+            throw error;
+        }
+    }
+
+    // 显示状态消息
+    function showStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = message;
+        statusDiv.className = 'status ' + type;
+
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 8000);
+        }
+    }
+
+    // 标签页切换
+    function initTabs() {
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+
+                this.classList.add('active');
+                document.getElementById(targetTab + '-content').classList.add('active');
+            });
+        });
+    }
+
+    // 初始化示例数据列表
+    function initExampleList() {
+        const exampleList = document.getElementById('exampleList');
+        exampleList.innerHTML = '';
+
+        EXAMPLE_DATA.forEach((example, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'example-item';
+            itemDiv.innerHTML = `
+                <label>
+                    <input type="checkbox" style="width:15px" id="example-${example.id}" value="${example.url}" data-name="${example.name}" data-example-id="${example.id}">
+                    <div class="example-details">
+                        <div class="example-title">${example.name}</div>
+                        <div class="example-desc">${example.description}</div>
+                    </div>
+                </label>
+            `;
+
+            // 点击整个item时切换checkbox
+            itemDiv.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const checkbox = itemDiv.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // checkbox变化时立即加载或移除数据
+            const checkbox = itemDiv.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', async function() {
+                const isChecked = this.checked;
+                itemDiv.classList.toggle('selected', isChecked);
+
+                const url = this.value;
+                const name = this.dataset.name;
+                const exampleId = this.dataset.exampleId;
+
+                // 清除之前的防抖定时器
+                if (checkboxDebounceTimers[exampleId]) {
+                    clearTimeout(checkboxDebounceTimers[exampleId]);
+                }
+
+                // 使用防抖避免快速切换导致的问题
+                checkboxDebounceTimers[exampleId] = setTimeout(async () => {
+                    if (isChecked) {
+                        // 勾选时加载数据
+                        await loadTileset(url, name, exampleId);
+                    } else {
+                        // 取消勾选时移除数据
+                        removeExampleTileset(exampleId);
+                    }
+                }, 300); // 300ms防抖延迟
+            });
+
+            exampleList.appendChild(itemDiv);
+        });
+    }
+
+    // 从URL加载单个tileset
+    async function loadFromUrl() {
+        if (!viewerReady || !viewer) {
+            showStatus('❌ 地图视图尚未初始化，请稍候重试', 'error');
+            return;
+        }
+
+        const urlInput = document.getElementById('urlInput').value.trim();
+
+        if (!urlInput) {
+            showStatus('请输入数据地址', 'error');
+            return;
+        }
+
+        await loadTileset(urlInput, '自定义数据');
+    }
+
+    // 通用加载tileset函数
+    async function loadTileset(url, name, exampleId = null) {
+        if (!viewerReady || !viewer) {
+            showStatus('❌ 地图视图尚未初始化，请稍候重试', 'error');
+            return;
+        }
+
+        // 检查是否正在加载
+        if (loadingTilesets.has(url)) {
+            showStatus(`⏳ "${name}" 正在加载中，请稍候...`, 'info');
+            return;
+        }
+
+        // 检查是否已经加载
+        const existing = loadedTilesets.find(t => t.url === url);
+        if (existing) {
+            showStatus(`⚠️ "${name}" 已经加载`, 'info');
+            try {
+                await viewer.zoomTo(existing.tileset);
+            } catch (error) {
+                console.warn('飞到tileset失败:', error);
+            }
+            return;
+        }
+
+        // 标记为正在加载
+        loadingTilesets.set(url, true);
+
+        try {
+            showStatus(`正在加载 "${name}"...`, 'info');
+
+            // 加载3D Tileset
+            const tileset = await Cesium.Cesium3DTileset.fromUrl(url, {
+                maximumScreenSpaceError: 16,
+                maximumMemoryUsage: 512
+            });
+
+            // 检查在加载期间是否已被取消
+            if (!loadingTilesets.has(url)) {
+                console.log('加载已被取消:', name);
+                tileset.destroy();
+                return;
+            }
+
+            viewer.scene.primitives.add(tileset);
+
+            // 存储tileset信息
+            const tilesetInfo = {
+                id: Date.now().toString(),
+                name: name,
+                url: url,
+                tileset: tileset,
+                exampleId: exampleId // 标记示例数据ID
+            };
+            loadedTilesets.push(tilesetInfo);
+
+            // 飞行到tileset位置
+            try {
+                await viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(
+                    0.0,
+                    -0.5,
+                    tileset.boundingSphere.radius * 2.0
+                ));
+            } catch (error) {
+                console.warn('飞到tileset失败:', error);
+            }
+
+            updateLoadedList();
+            showStatus(`✅ "${name}" 加载成功！`, 'success');
+
+        } catch (error) {
+            console.error('加载失败:', error);
+
+            let errorMsg = `❌ 加载 "${name}" 失败: ${error.message}`;
+
+            // 提供更有帮助的错误信息
+            if (error.message.includes('404') || error.message.includes('Failed to fetch')) {
+                errorMsg += '\n\n💡 请确认：\n1. URL地址正确\n2. 数据文件存在且可访问\n3. 如果是本地数据，请确保已启动HTTP服务器';
+            } else if (error.message.includes('CORS')) {
+                errorMsg += '\n\n💡 CORS错误：启动服务器时添加 --cors 参数';
+            }
+
+            showStatus(errorMsg, 'error');
+
+            // 如果是示例数据加载失败，取消勾选
+            if (exampleId) {
+                const checkbox = document.getElementById(`example-${exampleId}`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.parentElement.parentElement.classList.remove('selected');
+                }
+            }
+        } finally {
+            // 移除加载标记
+            loadingTilesets.delete(url);
+        }
+    }
+
+    // 更新已加载数据列表
+    function updateLoadedList() {
+        const listDiv = document.getElementById('loadedUrlsList');
+
+        if (loadedTilesets.length === 0) {
+            listDiv.innerHTML = '';
+            return;
+        }
+
+        listDiv.innerHTML = '<div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #333;">已加载的数据：</div>';
+
+        loadedTilesets.forEach((item) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'data-item';
+            itemDiv.innerHTML = `
+                <div class="data-item-info">
+                    <div class="data-item-name">${item.name}</div>
+                    <div class="data-item-url">${item.url}</div>
+                </div>
+                <button class="btn-remove" onclick="removeTileset('${item.id}')">删除</button>
+            `;
+
+            // 点击项目时飞到该数据
+            itemDiv.querySelector('.data-item-info').style.cursor = 'pointer';
+            itemDiv.querySelector('.data-item-info').addEventListener('click', function() {
+                try {
+                    if (item.tileset && !item.tileset.isDestroyed()) {
+                        viewer.zoomTo(item.tileset);
+                    }
+                } catch (error) {
+                    console.warn('飞到tileset失败:', error);
+                    showStatus('无法定位到该数据', 'error');
+                }
+            });
+
+            listDiv.appendChild(itemDiv);
+        });
+    }
+
+    // 删除指定的tileset
+    window.removeTileset = function(id) {
+        const index = loadedTilesets.findIndex(t => t.id === id);
+        if (index !== -1) {
+            const item = loadedTilesets[index];
+
+            try {
+                // 安全地移除和销毁tileset
+                if (item.tileset && !item.tileset.isDestroyed()) {
+                    viewer.scene.primitives.remove(item.tileset);
+                    item.tileset.destroy();
+                }
+            } catch (error) {
+                console.warn('移除tileset时出错:', error);
+            }
+
+            // 如果是示例数据，取消对应的checkbox
+            if (item.exampleId) {
+                const checkbox = document.getElementById(`example-${item.exampleId}`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.parentElement.parentElement.classList.remove('selected');
+                }
+            }
+
+            // 取消加载标记（如果存在）
+            loadingTilesets.delete(item.url);
+
+            loadedTilesets.splice(index, 1);
+            updateLoadedList();
+            showStatus(`已删除 "${item.name}"`, 'info');
+        }
+    };
+
+    // 删除示例数据的tileset（通过示例ID）
+    function removeExampleTileset(exampleId) {
+        const index = loadedTilesets.findIndex(t => t.exampleId === exampleId);
+        if (index !== -1) {
+            const item = loadedTilesets[index];
+
+            try {
+                // 安全地移除和销毁tileset
+                if (item.tileset && !item.tileset.isDestroyed()) {
+                    viewer.scene.primitives.remove(item.tileset);
+                    item.tileset.destroy();
+                }
+            } catch (error) {
+                console.warn('移除tileset时出错:', error);
+            }
+
+            // 取消加载标记（如果存在）
+            loadingTilesets.delete(item.url);
+
+            loadedTilesets.splice(index, 1);
+            updateLoadedList();
+            showStatus(`已隐藏 "${item.name}"`, 'info');
+        } else {
+            // 如果数据还在加载中就被取消，标记取消
+            const exampleData = EXAMPLE_DATA.find(e => e.id === exampleId);
+            if (exampleData && loadingTilesets.has(exampleData.url)) {
+                loadingTilesets.delete(exampleData.url);
+                showStatus(`已取消加载 "${exampleData.name}"`, 'info');
+            }
+        }
+    }
+
+    // 添加新的URL输入
+    function addUrlToLoad() {
+        const urlInput = document.getElementById('urlInput').value.trim();
+        if (urlInput) {
+            loadFromUrl();
+        }
+    }
+
+    // 清除所有tileset
+    function clearAllTilesets() {
+        if (!viewer) {
+            showStatus('地图视图尚未初始化', 'error');
+            return;
+        }
+
+        if (loadedTilesets.length === 0) {
+            showStatus('没有需要清除的数据', 'info');
+            return;
+        }
+
+        // 复制数组以避免在迭代时修改
+        const tilesetsCopy = [...loadedTilesets];
+
+        tilesetsCopy.forEach(item => {
+            try {
+                // 安全地移除和销毁tileset
+                if (item.tileset && !item.tileset.isDestroyed()) {
+                    viewer.scene.primitives.remove(item.tileset);
+                    item.tileset.destroy();
+                }
+            } catch (error) {
+                console.warn('移除tileset时出错:', error);
+            }
+
+            // 如果是示例数据，取消对应的checkbox
+            if (item.exampleId) {
+                const checkbox = document.getElementById(`example-${item.exampleId}`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.parentElement.parentElement.classList.remove('selected');
+                }
+            }
+        });
+
+        // 清除所有加载标记
+        loadingTilesets.clear();
+
+        loadedTilesets = [];
+        updateLoadedList();
+        document.getElementById('urlInput').value = 'https://pelican-public.s3.amazonaws.com/3dtiles/agi-hq/tileset.json';
+        showStatus('已清除所有3D Tiles数据', 'info');
+    }
+
+    // 加载选中的示例数据（此函数已废弃，改为即时加载）
+    async function loadSelectedExamples() {
+        const checkboxes = document.querySelectorAll('#exampleList input[type="checkbox"]:checked');
+
+        if (checkboxes.length === 0) {
+            showStatus('请至少选择一个示例数据', 'error');
+            return;
+        }
+
+        showStatus(`正在加载 ${checkboxes.length} 个示例数据...`, 'info');
+
+        for (const checkbox of checkboxes) {
+            const url = checkbox.value;
+            const name = checkbox.dataset.name;
+            const exampleId = checkbox.dataset.exampleId;
+            await loadTileset(url, name, exampleId);
+        }
+    }
+
+    // URL回车键加载
+    document.getElementById('urlInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadFromUrl();
+        }
+    });
+
+    // 初始化
+    window.addEventListener('load', function() {
+        try {
+            initViewer();
+            initTabs();
+            initExampleList();
+            showStatus('✅ 预览器已就绪，请输入数据地址或选择示例数据', 'success');
+
+            // 添加按钮事件监听器
+            document.getElementById('loadUrlBtn').addEventListener('click', loadFromUrl);
+            document.getElementById('addUrlBtn').addEventListener('click', addUrlToLoad);
+            document.getElementById('clearBtn').addEventListener('click', clearAllTilesets);
+
+        } catch (error) {
+            console.error('初始化失败:', error);
+            showStatus('❌ 初始化失败: ' + error.message, 'error');
+        }
+    });
+</script>
+</body>
+</html>
